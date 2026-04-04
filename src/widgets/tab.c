@@ -1,0 +1,252 @@
+#include "tab.h"
+#include "core/app.h"
+#include "core/window_manager.h"
+#include <gio/gdesktopappinfo.h>
+#include <stdio.h>
+
+#define TAB_CLASS_NAME "tab"
+#define TAB_CLASS_NAME_FOCUSED "focused"
+
+struct _WwtTab {
+    GtkButton parent_instance;
+
+    WwtApp *app;
+    gchar *win_id;
+    gchar *title;
+    gchar *app_id;
+    int focused;
+    int x;
+    int y;
+};
+
+G_DEFINE_TYPE(WwtTab, wwt_tab, GTK_TYPE_BUTTON);
+
+static void truncate_title(gchar *title, int max_len) {
+    int len = strlen(title);
+
+    if (len > max_len && len > 3) {
+        title[max_len] = '\0';
+        title[max_len - 1] = '.';
+        title[max_len - 2] = '.';
+        title[max_len - 3] = '.';
+    }
+}
+
+/**
+ * Sets the buttons icon. First checks the gdesktopappinfo then goes to gtk
+ * image from gicon
+ *
+ * @param self
+ */
+static gboolean set_btn_icon(WwtTab *self) {
+    GDesktopAppInfo *info = g_desktop_app_info_new(self->app_id);
+
+    if (!info) {
+        gchar *desktop_id = g_strdup_printf("%s.desktop", self->app_id);
+        info = g_desktop_app_info_new(desktop_id);
+        g_free(desktop_id);
+    }
+
+    if (info) {
+        GIcon *icon = g_app_info_get_icon(G_APP_INFO(info));
+        GtkWidget *image = gtk_image_new_from_gicon(icon, GTK_ICON_SIZE_BUTTON);
+        gtk_button_set_image(GTK_BUTTON(self), image);
+        gtk_button_set_always_show_image(GTK_BUTTON(self), TRUE);
+        g_object_unref(info);
+    }
+
+    return TRUE;
+}
+
+/**
+ * Handle the button click event
+ *
+ * @param widget The button instance
+ * @param event The button click event
+ * @param user_data Null in this case
+ */
+static gboolean on_button_press(
+    GtkWidget *widget,
+    GdkEventButton *event,
+    gpointer user_data
+) {
+    WwtTab *tab = WWT_TAB(widget);
+    WwtWindowManager *wm = wwt_app_get_window_manager(tab->app);
+
+    WindowManagerClickHandler window_focus =
+        wwt_window_manager_get_click_handler(wm, WM_CLICK_FOCUS);
+    WindowManagerClickHandler window_close =
+        wwt_window_manager_get_click_handler(wm, WM_CLICK_CLOSE);
+    WindowManagerClickHandler window_float =
+        wwt_window_manager_get_click_handler(wm, WM_CLICK_FLOAT);
+
+    if (event->button == 1) {
+        window_focus(tab->win_id);
+        return TRUE;
+    }
+
+    if (event->button == 2) {
+        window_float(tab->win_id);
+        return TRUE; // stop propagation
+    }
+
+    if (event->button == 3) {
+        window_close(tab->win_id);
+        // handle right click
+        return TRUE;
+    }
+
+    return FALSE; // let GtkButton handle click normally
+}
+
+/**
+ * Initialize the tab instance
+ *
+ * @param self
+ */
+static void wwt_tab_init(WwtTab *self) {
+    gtk_widget_add_events(GTK_WIDGET(self), GDK_BUTTON_PRESS_MASK);
+    g_signal_connect(
+        self,
+        "button-press-event",
+        G_CALLBACK(on_button_press),
+        NULL
+    );
+}
+
+/**
+ * Dispose the tab instance. Gref cleanup.
+ *
+ * @param obj The stuct obj.
+ *
+ */
+static void wwt_tab_dispose(GObject *obj) {
+    WwtTab *self = WWT_TAB(obj);
+
+    printf("calling dispose on %s\n", self->title);
+
+    G_OBJECT_CLASS(wwt_tab_parent_class)->dispose(obj);
+}
+
+/**
+ * Finalizer for the tab instance
+ *
+ * @param object The tab struct
+ */
+static void wwt_tab_finalize(GObject *obj) {
+    WwtTab *self = WWT_TAB(obj);
+
+    printf("calling finalize on %s\n", self->title);
+
+    g_free(self->win_id);
+    g_free(self->title);
+    g_free(self->app_id);
+
+    G_OBJECT_CLASS(wwt_tab_parent_class)->finalize(obj);
+}
+
+/**
+ * Class initializer
+ *
+ * @param klass the object class
+ */
+static void wwt_tab_class_init(WwtTabClass *klass) {
+    GObjectClass *object_class = G_OBJECT_CLASS(klass);
+    object_class->dispose = wwt_tab_dispose;
+    object_class->finalize = wwt_tab_finalize;
+}
+
+/**
+ * Updates the tab information so it can be reused.
+ *
+ * @param self The tab instance
+ * @param id The tabs id (should be the same as the compositor window)
+ * @param name The window name
+ * @param app_id The application id or class
+ * @param ws_name The workspace name
+ * @param focused The focused status
+ * @param x Window position x
+ * @param y Window position y
+ */
+void wwt_tab_update(
+    WwtTab *self,
+    const gchar *win_id,
+    const gchar *name,
+    const gchar *app_id,
+    int focused,
+    int x,
+    int y
+) {
+    g_free(self->win_id);
+    self->win_id = g_strdup(win_id);
+    g_free(self->title);
+    self->title = g_strdup(name);
+    g_free(self->app_id);
+    self->app_id = g_strdup(app_id);
+
+    self->focused = focused;
+    self->x = x;
+    self->y = y;
+
+    truncate_title(self->title, 20);
+
+    gtk_button_set_label(GTK_BUTTON(self), self->title);
+    set_btn_icon(self);
+
+    GtkStyleContext *ctx = gtk_widget_get_style_context(GTK_WIDGET(self));
+    if (self->focused) {
+        gtk_style_context_add_class(ctx, TAB_CLASS_NAME_FOCUSED);
+    } else {
+        gtk_style_context_remove_class(ctx, TAB_CLASS_NAME_FOCUSED);
+    }
+}
+
+/**
+ * Creates a new instance of the tab widget
+ *
+ * @param tabs The tabs instance
+ * @param id The tabs id (should be the same as the compositor window)
+ * @param name The window name
+ * @param app_id The application id or class
+ * @param focused The focused status
+ * @param x Window position x
+ * @param y Window position y
+ */
+WwtTab *wwt_tab_new(
+    WwtApp *app,
+    const gchar *win_id,
+    const gchar *name,
+    const gchar *app_id,
+    int focused,
+    int x,
+    int y
+) {
+    WwtTab *self = g_object_new(WWT_TAB_TYPE, NULL);
+
+    self->app = app;
+    self->win_id = g_strdup(win_id);
+    self->title = g_strdup(name);
+    self->app_id = g_strdup(app_id);
+    self->focused = focused;
+    self->x = x;
+    self->y = y;
+
+    // set up classes
+    GtkStyleContext *ctx = gtk_widget_get_style_context(GTK_WIDGET(self));
+
+    gtk_style_context_add_class(ctx, TAB_CLASS_NAME);
+
+    if (self->focused) {
+        gtk_style_context_add_class(ctx, TAB_CLASS_NAME_FOCUSED);
+    }
+
+    // set up label
+    truncate_title(self->title, 20);
+    set_btn_icon(self);
+    gtk_button_set_label(GTK_BUTTON(self), self->title);
+    gtk_button_set_always_show_image(GTK_BUTTON(self), TRUE);
+
+    // gtk_button_set_alignment(GTK_BUTTON(self), 0.0, 0.5);
+
+    return self;
+}
