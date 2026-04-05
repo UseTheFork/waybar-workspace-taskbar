@@ -6,7 +6,7 @@
 #include "widgets/tabs.h"
 #include <stdio.h>
 
-static int socket_init() {
+static int events_constructor() {
     const char *socket_path = getenv("NIRI_SOCKET");
 
     if (!socket_path) {
@@ -23,6 +23,30 @@ static int socket_init() {
     return fd;
 }
 
+static void events_destructor(int fd, FILE *socket_file) {
+    fclose(socket_file);
+}
+
+static gboolean events_reader(FILE *socket_file, WindowManagerEvent *event) {
+    if (getline(&event->msg, (size_t *)&event->msg_size, socket_file) <= 0) {
+        clearerr(socket_file);
+        return FALSE;
+    }
+
+    event->msg_len = strlen(event->msg);
+
+    return TRUE;
+}
+
+static void events_callback(WindowManagerEvent *event, gpointer user_data) {
+    printf("%s\n", event->msg);
+
+    WwtApp *app = user_data;
+    WwtTabs *tabs = wwt_app_get_tabs(app);
+
+    wwt_tabs_generate_tabs(tabs);
+}
+
 static gboolean window_focus(const char *id) {
     return wm_click_execute("niri msg action focus-window --id %s", id);
 }
@@ -36,13 +60,6 @@ static gboolean window_float(const char *id) {
         "niri msg action toggle-window-floating --id %s",
         id
     );
-}
-
-static void events_callback(const char *event, gpointer user_data) {
-    WwtApp *app = user_data;
-    WwtTabs *tabs = wwt_app_get_tabs(app);
-
-    wwt_tabs_generate_tabs(tabs);
 }
 
 static int should_swap(WindowManagerWindow *cur, WindowManagerWindow *prev) {
@@ -198,13 +215,14 @@ static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
 WindowManagerSpec *window_manager_spec_create_niri() {
     WindowManagerSpec *spec = g_malloc(sizeof(WindowManagerSpec));
 
-    spec->events_buf_size = 4096;
-    spec->socket_init = socket_init;
+    spec->events_constructor = events_constructor;
+    spec->events_destructor = events_destructor;
+    spec->events_reader = events_reader;
+    spec->events_callback = events_callback;
     spec->get_windows = get_windows;
     spec->window_focus = window_focus;
     spec->window_close = window_close;
     spec->window_float = window_float;
-    spec->events_callback = events_callback;
 
     return spec;
 }

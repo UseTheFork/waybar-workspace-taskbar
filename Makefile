@@ -27,3 +27,14 @@ run:
 
 run_interactive:
 	GTK_DEBUG=interactive waybar -c $(LOCAL_DIR)/config.jsonc -s $(LOCAL_DIR)/style.css
+
+valgrind: $(EXECUTABLE)
+	valgrind --leak-check=full \
+		--track-origins=yes \
+		--show-leak-kinds=definite \
+		--errors-for-leak-kinds=definite \
+		--quiet \
+		waybar -c $(LOCAL_DIR)/config.jsonc -s $(LOCAL_DIR)/style.css
+
+debug:
+	coredumpctl gdb

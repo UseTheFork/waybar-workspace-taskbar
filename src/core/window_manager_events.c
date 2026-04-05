@@ -6,13 +6,15 @@
 #include <unistd.h>
 
 #define WM_EVENTS_CALLBACK_TIMEOUT 50
+#define WM_EVENTS_MSG_SIZE 4096
 
 struct _WindowManagerEvents {
-    FILE *socket_file;
-    int socket_fd;
-    struct pollfd poll_fd;
-    int event_buf_size;
     int timeout_id;
+    int socket_fd;
+    FILE *socket_file;
+    struct pollfd poll_fd;
+    WindowManagerEvent *event;
+    WindowManagerEventsReader reader;
     WindowManagerEventsSubscription *subs[WM_EVENTS_MAX_CALlBACKS];
 };
 
@@ -20,6 +22,34 @@ struct _WindowManagerEventsSubscription {
     WindowManagerEventsCallback cb;
     gpointer user_data;
 };
+
+/**
+ * Creates the window manager event
+ *
+ * Uses malloc instead of g_malloc because readline will use stdlib to resize
+ */
+static WindowManagerEvent *window_manager_event_create() {
+    char *msg = malloc(WM_EVENTS_MSG_SIZE);
+    WindowManagerEvent *event = malloc(sizeof(WindowManagerEvent));
+    event->msg = msg;
+    event->msg_len = 0;
+    event->msg_size = WM_EVENTS_MSG_SIZE;
+
+    return event;
+}
+
+/**
+ * Destroys the window manager event
+ *
+ * Again use free instead of g_free because we use stdlib to create so readline
+ * can correctly resize the msg
+ *
+ * @param event
+ */
+static void window_manager_event_destroy(WindowManagerEvent *event) {
+    free(event->msg);
+    free(event);
+}
 
 static void set_non_block(int fd) {
     int flags = fcntl(fd, F_GETFL, 0);
@@ -39,27 +69,37 @@ static gboolean window_manager_events_poll(gpointer user_data) {
     }
 
     if (events->poll_fd.revents & POLLIN) {
-        char buf[events->event_buf_size];
 
-        while (fgets(buf, sizeof(buf), events->socket_file) != NULL) {
+        while (events->reader(events->socket_file, events->event)) {
             for (int i = 0; i < WM_EVENTS_MAX_CALlBACKS; ++i) {
                 if (events->subs[i]) {
-                    events->subs[i]->cb(buf, events->subs[i]->user_data);
+                    events->subs[i]->cb(
+                        events->event,
+                        events->subs[i]->user_data
+                    );
                 }
             }
         }
+
+        // while (fgets(buf, sizeof(buf), events->socket_file) != NULL) {
+        //     for (int i = 0; i < WM_EVENTS_MAX_CALlBACKS; ++i) {
+        //         if (events->subs[i]) {
+        //             events->subs[i]->cb(buf, events->subs[i]->user_data);
+        //         }
+        //     }
+        // }
     }
 
     return TRUE;
 }
 
 WindowManagerEvents *window_manager_events_create(
-    WindowManagerSocketInit window_manager_socket_init,
-    int event_buf_size
+    WindowManagerEventsConstructor events_constructor,
+    WindowManagerEventsReader events_reader
 ) {
     WindowManagerEvents *events = g_malloc0(sizeof(WindowManagerEvents));
 
-    int fd = window_manager_socket_init();
+    int fd = events_constructor();
 
     events->socket_file = fdopen(fd, "r");
 
@@ -70,10 +110,10 @@ WindowManagerEvents *window_manager_events_create(
         return NULL;
     }
 
-    events->event_buf_size = event_buf_size;
+    events->event = window_manager_event_create();
+    events->reader = events_reader;
     events->poll_fd.fd = fd;
     events->poll_fd.events = POLLIN;
-    events->event_buf_size = event_buf_size;
     events->timeout_id = g_timeout_add(
         WM_EVENTS_CALLBACK_TIMEOUT,
         window_manager_events_poll,
@@ -85,15 +125,20 @@ WindowManagerEvents *window_manager_events_create(
     return events;
 }
 
-gboolean window_manager_events_destroy(WindowManagerEvents *events) {
-    fclose(events->socket_file);
-
+gboolean window_manager_events_destroy(
+    WindowManagerEvents *events,
+    WindowManagerEventsDestructor destructor
+) {
     for (int i = 0; i < WM_EVENTS_MAX_CALlBACKS; ++i) {
-        if (!events->subs[i]) {
+        if (events->subs[i]) {
             window_manager_events_unsubscribe(events, i);
         }
     }
 
+    // fclose(events->socket_file);
+    destructor(events->poll_fd.fd, events->socket_file);
+
+    window_manager_event_destroy(events->event);
     g_source_remove(events->timeout_id);
     g_free(events);
 

@@ -100,8 +100,8 @@ static void finalize(GObject *obj) {
         self->events_subscription_id
     );
 
+    window_manager_events_destroy(self->events, self->spec->events_destructor);
     g_free(self->spec);
-    g_free(self->events);
 
     printf("calling finalize on window manager\n");
 
@@ -145,8 +145,8 @@ WwtWindowManager *window_manager_new(WwtApp *app, WindowManagerId wm_id) {
     }
 
     self->events = window_manager_events_create(
-        self->spec->socket_init,
-        self->spec->events_buf_size
+        self->spec->events_constructor,
+        self->spec->events_reader
     );
 
     if (!self->events) {

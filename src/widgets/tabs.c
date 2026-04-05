@@ -55,12 +55,13 @@ gboolean wwt_tabs_generate_tabs(WwtTabs *self) {
         return FALSE;
     }
 
-    GList *root = gtk_container_get_children(GTK_CONTAINER(self));
+    GList *children = gtk_container_get_children(GTK_CONTAINER(self));
+    GList *child = children;
 
     for (guint i = 0; i < wins->len; i++) {
         WindowManagerWindow *win = g_ptr_array_index(wins, i);
 
-        if (root == NULL) {
+        if (child == NULL) {
             WwtTab *tab = wwt_tab_new(
                 self->app,
                 win->id,
@@ -74,7 +75,7 @@ gboolean wwt_tabs_generate_tabs(WwtTabs *self) {
             gtk_container_add(GTK_CONTAINER(self), GTK_WIDGET(tab));
         } else {
             wwt_tab_update(
-                WWT_TAB(root->data),
+                WWT_TAB(child->data),
                 win->id,
                 win->title,
                 win->app_id,
@@ -84,17 +85,18 @@ gboolean wwt_tabs_generate_tabs(WwtTabs *self) {
             );
         }
 
-        if (root) {
-            root = root->next;
+        if (child) {
+            child = child->next;
         }
     }
 
-    while (root != NULL) {
-        GList *next = root->next;
-        gtk_container_remove(GTK_CONTAINER(self), GTK_WIDGET(root->data));
-        root = next;
+    while (child != NULL) {
+        GList *next = child->next;
+        gtk_container_remove(GTK_CONTAINER(self), GTK_WIDGET(child->data));
+        child = next;
     }
 
+    g_list_free(children);
     gtk_widget_show_all(GTK_WIDGET(self));
     wwt_tabs_apply_visual_state(self, wins->len);
     g_ptr_array_free(wins, TRUE);

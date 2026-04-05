@@ -26,17 +26,29 @@ typedef enum {
     WM_CLICK_CLOSE
 } WindowManagerClickHandlerType;
 
-typedef int (*WindowManagerSocketInit)();
-typedef gboolean (*WindowManagerClickHandler)(const char *id);
-typedef gboolean (*WindowManagerGetWindows)(WwtApp *app, GPtrArray *tabs);
+typedef struct {
+    char *msg;
+    int msg_len;
+    int msg_size;
+} WindowManagerEvent;
+
+typedef int (*WindowManagerEventsConstructor)();
+typedef void (*WindowManagerEventsDestructor)(int fd, FILE *socket_file);
+typedef gboolean (*WindowManagerEventsReader)(
+    FILE *socket_file,
+    WindowManagerEvent *event
+);
 typedef void (*WindowManagerEventsCallback)(
-    const char *event,
+    WindowManagerEvent *event,
     gpointer user_data
 );
+typedef gboolean (*WindowManagerClickHandler)(const char *id);
+typedef gboolean (*WindowManagerGetWindows)(WwtApp *app, GPtrArray *tabs);
 
 typedef struct WindowManagerSpec {
-    int events_buf_size;
-    WindowManagerSocketInit socket_init;
+    WindowManagerEventsConstructor events_constructor;
+    WindowManagerEventsDestructor events_destructor;
+    WindowManagerEventsReader events_reader;
     WindowManagerEventsCallback events_callback;
     WindowManagerGetWindows get_windows;
     WindowManagerClickHandler window_focus;

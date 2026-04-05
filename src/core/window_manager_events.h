@@ -7,11 +7,14 @@
 #define WM_EVENTS_MAX_CALlBACKS 8
 
 WindowManagerEvents *window_manager_events_create(
-    WindowManagerSocketInit window_manager_socket_init,
-    int event_buf_size
+    WindowManagerEventsConstructor events_constructor,
+    WindowManagerEventsReader events_reader
 );
 
-int window_manager_events_destroy(WindowManagerEvents *events);
+int window_manager_events_destroy(
+    WindowManagerEvents *events,
+    WindowManagerEventsDestructor destructor
+);
 
 int window_manager_events_subscribe(
     WindowManagerEvents *events,
