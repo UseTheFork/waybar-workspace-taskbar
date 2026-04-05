@@ -9,6 +9,10 @@ G_BEGIN_DECLS;
 G_DECLARE_FINAL_TYPE(WwtConfig, wwt_config, WWT, CONFIG, GObject)
 
 WindowManagerId wwt_config_get_wm_id(WwtConfig *self);
+const char *wwt_config_get_output(WwtConfig *self);
+gboolean wwt_config_get_show_icon(WwtConfig *self);
+gboolean wwt_config_get_show_title(WwtConfig *self);
+int wwt_config_get_title_max_chars(WwtConfig *self);
 
 WwtConfig *wwt_config_new(
     const wbcffi_config_entry *config_entries,

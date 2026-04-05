@@ -32,13 +32,53 @@ void wwt_config_log_entries(WwtConfig *self) {
 }
 
 /**
- * Gets the window manager id
+ * Gets the window manager id value
  *
  * @param self
- * @return The window manager id
+ * @return The window manager id value
  */
 WindowManagerId wwt_config_get_wm_id(WwtConfig *self) {
     return self->window_manager_id;
+}
+
+/**
+ * Gets the output value
+ *
+ * @param self
+ * @return The output
+ */
+const char *wwt_config_get_output(WwtConfig *self) {
+    return self->output;
+}
+
+/**
+ * Gets the show_title value
+ *
+ * @param self
+ * @return The show_title value
+ */
+gboolean wwt_config_get_show_title(WwtConfig *self) {
+    return self->show_title;
+}
+
+/**
+ * Gets the show_icon value
+ *
+ * @param self
+ * @return The show_icon value
+ */
+gboolean wwt_config_get_show_icon(WwtConfig *self) {
+    return self->show_icon;
+}
+
+/**
+ * Gets the title_max_chars value
+ *
+ * @param self
+ * @return The title_max_chars value
+ */
+int wwt_config_get_title_max_chars(WwtConfig *self) {
+    return self->title_max_chars;
 }
 
 /**

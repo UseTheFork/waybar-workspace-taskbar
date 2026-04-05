@@ -121,7 +121,7 @@ static int should_swap(WindowManagerWindow *cur, WindowManagerWindow *prev) {
  *
  * @param app The app instance
  * @param wins An empty array to populate with the window information
- * @param TRUE if successfully fetched windows else FALSE
+ * @return TRUE if successfully fetched windows else FALSE
  */
 static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
     const char *monitor_name = "HDMI-A-1";

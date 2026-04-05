@@ -109,16 +109,26 @@ WwtApp *wwt_app_new(
     WwtApp *self = g_object_new(WWT_APP_TYPE, NULL);
 
     self->waybar_module = init_info->obj;
-    self->config = wwt_config_new(config_entries, config_entries_len);
 
-    if (wwt_config_get_wm_id(self->config) == WM_ID_UNSUPPORTED) {
+    self->config = wwt_config_new(config_entries, config_entries_len);
+    WindowManagerId wm_id = wwt_config_get_wm_id(self->config);
+
+    if (wm_id == WM_ID_UNSUPPORTED) {
         g_object_unref(self);
         g_critical("Waybar Workspace Taskbar: unsupported window_manager");
 
         return NULL;
     }
 
-    self->window_manager = window_manager_new(self, WM_ID_NIRI);
+    self->window_manager = window_manager_new(self, wm_id);
+    if (!self->window_manager) {
+        g_object_unref(self);
+        g_critical(
+            "Waybar Workspace Taskbar: error initializing window manager"
+        );
+
+        return NULL;
+    }
 
     // Add a container for displaying the tabs
     GtkContainer *root = init_info->get_root_widget(init_info->obj);

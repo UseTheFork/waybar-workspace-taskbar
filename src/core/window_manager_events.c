@@ -147,13 +147,16 @@ void window_manager_events_destroy(
     WindowManagerEvents *events,
     WindowManagerEventsDestructor destructor
 ) {
+    if (!events) {
+        return;
+    }
+
     for (int i = 0; i < WM_EVENTS_MAX_CALlBACKS; ++i) {
         if (events->subs[i]) {
             window_manager_events_unsubscribe(events, i);
         }
     }
 
-    // fclose(events->socket_file);
     destructor(events->poll_fd.fd, events->socket_file);
 
     window_manager_event_destroy(events->event);
@@ -199,7 +202,7 @@ gboolean window_manager_events_unsubscribe(
     WindowManagerEvents *events,
     int id
 ) {
-    if (id < 0 || id >= WM_EVENTS_MAX_CALlBACKS) {
+    if (!events || id < 0 || id >= WM_EVENTS_MAX_CALlBACKS) {
         return FALSE;
     }
 
