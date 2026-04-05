@@ -24,6 +24,16 @@ struct _WindowManagerEventsSubscription {
 };
 
 /**
+ * Sets non blocking on the socket file
+ *
+ * @param fd Socket file descriptor
+ */
+static void set_non_block(int fd) {
+    int flags = fcntl(fd, F_GETFL, 0);
+    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+}
+
+/**
  * Creates the window manager event
  *
  * Uses malloc instead of g_malloc because readline will use stdlib to resize
@@ -51,11 +61,11 @@ static void window_manager_event_destroy(WindowManagerEvent *event) {
     free(event);
 }
 
-static void set_non_block(int fd) {
-    int flags = fcntl(fd, F_GETFL, 0);
-    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-}
-
+/**
+ * Poll for socket events
+ *
+ * @param user_data In this case the events instance
+ */
 static gboolean window_manager_events_poll(gpointer user_data) {
     WindowManagerEvents *events = user_data;
     int ret = poll(&events->poll_fd, 1, 0);
@@ -69,7 +79,6 @@ static gboolean window_manager_events_poll(gpointer user_data) {
     }
 
     if (events->poll_fd.revents & POLLIN) {
-
         while (events->reader(events->socket_file, events->event)) {
             for (int i = 0; i < WM_EVENTS_MAX_CALlBACKS; ++i) {
                 if (events->subs[i]) {
@@ -80,19 +89,18 @@ static gboolean window_manager_events_poll(gpointer user_data) {
                 }
             }
         }
-
-        // while (fgets(buf, sizeof(buf), events->socket_file) != NULL) {
-        //     for (int i = 0; i < WM_EVENTS_MAX_CALlBACKS; ++i) {
-        //         if (events->subs[i]) {
-        //             events->subs[i]->cb(buf, events->subs[i]->user_data);
-        //         }
-        //     }
-        // }
     }
 
     return TRUE;
 }
 
+/**
+ * Create the window manager events
+ *
+ * @param events_constructor Window manager specific socket connection
+ * constructor
+ * @param events_reader Window manager specific events reader
+ */
 WindowManagerEvents *window_manager_events_create(
     WindowManagerEventsConstructor events_constructor,
     WindowManagerEventsReader events_reader
@@ -125,6 +133,12 @@ WindowManagerEvents *window_manager_events_create(
     return events;
 }
 
+/**
+ * Destroy the window manager events
+ *
+ * @pararm events
+ * @param destructor The window manager specific events destructor
+ */
 gboolean window_manager_events_destroy(
     WindowManagerEvents *events,
     WindowManagerEventsDestructor destructor
@@ -145,6 +159,13 @@ gboolean window_manager_events_destroy(
     return TRUE;
 }
 
+/**
+ * Subscribe to the window manager events
+ *
+ * @param events The events instance
+ * @param cb The function to call on an event
+ * @param user_data Any data to pass to the callback
+ */
 int window_manager_events_subscribe(
     WindowManagerEvents *events,
     WindowManagerEventsCallback cb,
@@ -164,17 +185,23 @@ int window_manager_events_subscribe(
     return -1;
 }
 
+/**
+ * Unsubscribe to the window manager events
+ *
+ * @param events The events instance
+ * @param id This is the id passed on subscribing.
+ */
 gboolean window_manager_events_unsubscribe(
     WindowManagerEvents *events,
-    int pos
+    int id
 ) {
-    if (pos < 0 || pos >= WM_EVENTS_MAX_CALlBACKS) {
+    if (id < 0 || id >= WM_EVENTS_MAX_CALlBACKS) {
         return FALSE;
     }
 
-    if (events->subs[pos]) {
-        g_free(events->subs[pos]);
-        events->subs[pos] = NULL;
+    if (events->subs[id]) {
+        g_free(events->subs[id]);
+        events->subs[id] = NULL;
     }
 
     return TRUE;

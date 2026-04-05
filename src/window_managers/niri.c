@@ -6,6 +6,9 @@
 #include "widgets/tabs.h"
 #include <stdio.h>
 
+/**
+ * Connect and initialize the socket connection
+ */
 static int events_constructor() {
     const char *socket_path = getenv("NIRI_SOCKET");
 
@@ -23,10 +26,23 @@ static int events_constructor() {
     return fd;
 }
 
+/**
+ * Close the socket connection
+ *
+ * @param fd The socket file descriptor
+ * @param socket_file The socket file
+ */
 static void events_destructor(int fd, FILE *socket_file) {
     fclose(socket_file);
 }
 
+/**
+ * Read and parse events. Add any data to the window manager event and return
+ * TRUE when the event is ready to be emitted
+ *
+ * @param socket_file The socket file to process
+ * @param event The event to process into
+ */
 static gboolean events_reader(FILE *socket_file, WindowManagerEvent *event) {
     if (getline(&event->msg, (size_t *)&event->msg_size, socket_file) <= 0) {
         clearerr(socket_file);
@@ -38,6 +54,12 @@ static gboolean events_reader(FILE *socket_file, WindowManagerEvent *event) {
     return TRUE;
 }
 
+/**
+ * Callback that fires when the full event message is ready
+ *
+ * @param event The event instance
+ * @param user_data any data that was passed in when subscribe was called
+ */
 static void events_callback(WindowManagerEvent *event, gpointer user_data) {
     printf("%s\n", event->msg);
 
@@ -47,14 +69,29 @@ static void events_callback(WindowManagerEvent *event, gpointer user_data) {
     wwt_tabs_generate_tabs(tabs);
 }
 
+/**
+ * Click handler to focus the window
+ *
+ * @param id The window id
+ */
 static gboolean window_focus(const char *id) {
     return wm_click_execute("niri msg action focus-window --id %s", id);
 }
 
+/**
+ * Click handler to close the window
+ *
+ * @param id The window id
+ */
 static gboolean window_close(const char *id) {
     return wm_click_execute("niri msg action close-window --id %s", id);
 }
 
+/**
+ * Click handler to toggle float the window
+ *
+ * @param id The window id
+ */
 static gboolean window_float(const char *id) {
     return wm_click_execute(
         "niri msg action toggle-window-floating --id %s",
@@ -62,6 +99,13 @@ static gboolean window_float(const char *id) {
     );
 }
 
+/**
+ * Called when insertion sorting the windows. Sort from left to right top to
+ * bottom
+ *
+ * @param cur The current window
+ * @param prev The previous window
+ */
 static int should_swap(WindowManagerWindow *cur, WindowManagerWindow *prev) {
     if (cur->x != prev->x) {
         return cur->x - prev->x;
@@ -69,6 +113,12 @@ static int should_swap(WindowManagerWindow *cur, WindowManagerWindow *prev) {
     return cur->y - prev->y;
 }
 
+/**
+ * Gets the windows information from the window manager
+ *
+ * @param app The app instance
+ * @param wins An empty array to populate with the window information
+ */
 static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
     const char *monitor_name = "HDMI-A-1";
 
@@ -212,6 +262,9 @@ static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
     return TRUE;
 }
 
+/**
+ * Create the window manager spec
+ */
 WindowManagerSpec *window_manager_spec_create_niri() {
     WindowManagerSpec *spec = g_malloc(sizeof(WindowManagerSpec));
 
