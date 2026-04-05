@@ -19,6 +19,7 @@ G_DEFINE_TYPE(WwtApp, wwt_app, G_TYPE_OBJECT);
  * Gets the tabs instance
  *
  * @param self
+ * @return The tabs widget
  */
 WwtTabs *wwt_app_get_tabs(WwtApp *self) {
     return self->tabs;
@@ -28,6 +29,7 @@ WwtTabs *wwt_app_get_tabs(WwtApp *self) {
  * Gets the config instance
  *
  * @param self
+ * @return The app config
  */
 WwtConfig *wwt_app_get_config(WwtApp *self) {
     return self->config;
@@ -37,6 +39,7 @@ WwtConfig *wwt_app_get_config(WwtApp *self) {
  * Gets the config instance
  *
  * @param self
+ * @return The window manager
  */
 WwtWindowManager *wwt_app_get_window_manager(WwtApp *self) {
     return self->window_manager;
@@ -92,6 +95,11 @@ static void wwt_app_class_init(WwtAppClass *klass) {
 
 /**
  * Creates a new instance of the app
+ *
+ * @param init_info Initiaization info from waybar
+ * @param config_entries The configuration entries from the module
+ * @param config_entries_len The len of config entries
+ * @return The fully created app instance
  */
 WwtApp *wwt_app_new(
     const wbcffi_init_info *init_info,

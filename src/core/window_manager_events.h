@@ -11,7 +11,7 @@ WindowManagerEvents *window_manager_events_create(
     WindowManagerEventsReader events_reader
 );
 
-int window_manager_events_destroy(
+void window_manager_events_destroy(
     WindowManagerEvents *events,
     WindowManagerEventsDestructor destructor
 );

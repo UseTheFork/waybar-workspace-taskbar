@@ -21,6 +21,12 @@ struct _WwtTab {
 
 G_DEFINE_TYPE(WwtTab, wwt_tab, GTK_TYPE_BUTTON);
 
+/**
+ * Trucats the title with an elipsis
+ *
+ * @param title The title to trucate
+ * @param max_len The max characters for the string to be including elipsis
+ */
 static void truncate_title(gchar *title, int max_len) {
     int len = strlen(title);
 
@@ -37,6 +43,7 @@ static void truncate_title(gchar *title, int max_len) {
  * image from gicon
  *
  * @param self
+ * @return TRUE if the icon is set else FALSE
  */
 static gboolean set_btn_icon(WwtTab *self) {
     GDesktopAppInfo *info = g_desktop_app_info_new(self->app_id);
@@ -64,6 +71,7 @@ static gboolean set_btn_icon(WwtTab *self) {
  * @param widget The button instance
  * @param event The button click event
  * @param user_data Null in this case
+ * @return TRUE if the press was processed else FALSE
  */
 static gboolean on_button_press(
     GtkWidget *widget,
@@ -118,7 +126,6 @@ static void wwt_tab_init(WwtTab *self) {
  * Dispose the tab instance. Gref cleanup.
  *
  * @param obj The stuct obj.
- *
  */
 static void wwt_tab_dispose(GObject *obj) {
     WwtTab *self = WWT_TAB(obj);
@@ -211,6 +218,7 @@ void wwt_tab_update(
  * @param focused The focused status
  * @param x Window position x
  * @param y Window position y
+ * @return The created tab widget
  */
 WwtTab *wwt_tab_new(
     WwtApp *app,

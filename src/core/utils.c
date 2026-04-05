@@ -10,6 +10,7 @@
  * Send a command no output
  *
  * @param cmd The command to send
+ * @return The return value of system()
  */
 int cmd_send(const char *cmd) {
     return system(cmd);

@@ -3,6 +3,13 @@
 #include "glib.h"
 #include <stdio.h>
 
+/**
+ * Executes a click action. Builds the command string and sends the command
+ *
+ * @param format The format string for the command
+ * @param id The window id
+ * @return TRUE if success else FALSE
+ */
 gboolean wm_click_execute(const char *format, const char *id) {
     char cmd[64];
     snprintf(cmd, sizeof(cmd), format, id);
@@ -12,6 +19,17 @@ gboolean wm_click_execute(const char *format, const char *id) {
     return TRUE;
 }
 
+/**
+ * Create the window data
+ *
+ * @param id The window id
+ * @param title The window title
+ * @param app_id The application id
+ * @param focused Whether the window is focused
+ * @param x Sorting value x (typically window x position)
+ * @param y Sorting value y (typically window y position)
+ * @return The fully created window data
+ */
 WindowManagerWindow *wm_win_create(
     const gchar *id,
     const gchar *title,
@@ -32,6 +50,11 @@ WindowManagerWindow *wm_win_create(
     return win;
 }
 
+/**
+ * Destroys the window data
+ *
+ * @param win The window data
+ */
 void wm_win_destroy(WindowManagerWindow *win) {
     g_free(win->id);
     g_free(win->title);
@@ -39,6 +62,12 @@ void wm_win_destroy(WindowManagerWindow *win) {
     g_free(win);
 }
 
+/**
+ * Creates the json parser
+ *
+ * @param json_str The string you want the parser to populate
+ * @return The parser
+ */
 JsonParser *create_parser(const char *json_str) {
     JsonParser *parser = json_parser_new();
     GError *error = NULL;

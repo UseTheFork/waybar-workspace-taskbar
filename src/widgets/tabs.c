@@ -39,6 +39,7 @@ void wwt_tabs_apply_visual_state(WwtTabs *tabs, int tab_len) {
  * Generates the tabs
  *
  * @param bar The tabs instance
+ * @return TRUE if tabs were successfully genenerated else FALSE
  */
 gboolean wwt_tabs_generate_tabs(WwtTabs *self) {
     WwtWindowManager *wm = wwt_app_get_window_manager(self->app);
@@ -152,6 +153,9 @@ static void wwt_tabs_class_init(WwtTabsClass *klass) {
 
 /**
  * Creates a new instance of the tabs widget
+ *
+ * @param app The app instance
+ * @return The fully created tabs widget
  */
 WwtTabs *wwt_tabs_new(WwtApp *app) {
     WwtTabs *self = g_object_new(

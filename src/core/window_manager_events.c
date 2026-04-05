@@ -37,6 +37,8 @@ static void set_non_block(int fd) {
  * Creates the window manager event
  *
  * Uses malloc instead of g_malloc because readline will use stdlib to resize
+ *
+ * @return The fully created window manager event
  */
 static WindowManagerEvent *window_manager_event_create() {
     char *msg = malloc(WM_EVENTS_MSG_SIZE);
@@ -65,6 +67,7 @@ static void window_manager_event_destroy(WindowManagerEvent *event) {
  * Poll for socket events
  *
  * @param user_data In this case the events instance
+ * @return TRUE if no error else FALSE
  */
 static gboolean window_manager_events_poll(gpointer user_data) {
     WindowManagerEvents *events = user_data;
@@ -100,6 +103,7 @@ static gboolean window_manager_events_poll(gpointer user_data) {
  * @param events_constructor Window manager specific socket connection
  * constructor
  * @param events_reader Window manager specific events reader
+ * @return The fully created events instance
  */
 WindowManagerEvents *window_manager_events_create(
     WindowManagerEventsConstructor events_constructor,
@@ -139,7 +143,7 @@ WindowManagerEvents *window_manager_events_create(
  * @pararm events
  * @param destructor The window manager specific events destructor
  */
-gboolean window_manager_events_destroy(
+void window_manager_events_destroy(
     WindowManagerEvents *events,
     WindowManagerEventsDestructor destructor
 ) {
@@ -155,8 +159,6 @@ gboolean window_manager_events_destroy(
     window_manager_event_destroy(events->event);
     g_source_remove(events->timeout_id);
     g_free(events);
-
-    return TRUE;
 }
 
 /**
@@ -165,6 +167,7 @@ gboolean window_manager_events_destroy(
  * @param events The events instance
  * @param cb The function to call on an event
  * @param user_data Any data to pass to the callback
+ * @return The id/pos of the subscription in the subscription array
  */
 int window_manager_events_subscribe(
     WindowManagerEvents *events,
@@ -190,6 +193,7 @@ int window_manager_events_subscribe(
  *
  * @param events The events instance
  * @param id This is the id passed on subscribing.
+ * @return TRUE if successfully unsubscribed else FALSE
  */
 gboolean window_manager_events_unsubscribe(
     WindowManagerEvents *events,

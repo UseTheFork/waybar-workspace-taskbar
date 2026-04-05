@@ -8,6 +8,8 @@
 
 /**
  * Connect and initialize the socket connection
+ *
+ * @return The file descriptor
  */
 static int events_constructor() {
     const char *socket_path = getenv("NIRI_SOCKET");
@@ -42,6 +44,7 @@ static void events_destructor(int fd, FILE *socket_file) {
  *
  * @param socket_file The socket file to process
  * @param event The event to process into
+ * @return TRUE if should emit the event else FALSE
  */
 static gboolean events_reader(FILE *socket_file, WindowManagerEvent *event) {
     if (getline(&event->msg, (size_t *)&event->msg_size, socket_file) <= 0) {
@@ -73,6 +76,7 @@ static void events_callback(WindowManagerEvent *event, gpointer user_data) {
  * Click handler to focus the window
  *
  * @param id The window id
+ * @return Whether the command was successfully executed
  */
 static gboolean window_focus(const char *id) {
     return wm_click_execute("niri msg action focus-window --id %s", id);
@@ -82,6 +86,7 @@ static gboolean window_focus(const char *id) {
  * Click handler to close the window
  *
  * @param id The window id
+ * @return Whether the command was successfully executed
  */
 static gboolean window_close(const char *id) {
     return wm_click_execute("niri msg action close-window --id %s", id);
@@ -91,6 +96,7 @@ static gboolean window_close(const char *id) {
  * Click handler to toggle float the window
  *
  * @param id The window id
+ * @return Whether the command was successfully executed
  */
 static gboolean window_float(const char *id) {
     return wm_click_execute(
@@ -105,6 +111,7 @@ static gboolean window_float(const char *id) {
  *
  * @param cur The current window
  * @param prev The previous window
+ * @return < 0 if should swap
  */
 static int should_swap(WindowManagerWindow *cur, WindowManagerWindow *prev) {
     if (cur->x != prev->x) {
@@ -118,6 +125,7 @@ static int should_swap(WindowManagerWindow *cur, WindowManagerWindow *prev) {
  *
  * @param app The app instance
  * @param wins An empty array to populate with the window information
+ * @param TRUE if successfully fetched windows else FALSE
  */
 static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
     const char *monitor_name = "HDMI-A-1";
@@ -264,6 +272,8 @@ static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
 
 /**
  * Create the window manager spec
+ *
+ * @return (transfer full): The fully created window manager spec
  */
 WindowManagerSpec *window_manager_spec_create_niri() {
     WindowManagerSpec *spec = g_malloc(sizeof(WindowManagerSpec));

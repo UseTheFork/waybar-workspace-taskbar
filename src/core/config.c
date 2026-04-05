@@ -53,6 +53,10 @@ static void wwt_config_class_init(WwtConfigClass *klass) {
 
 /**
  * Creates a new instance of the config
+ *
+ * @param config_entries The configuration entries from the module
+ * @param config_entries_len The len of config entries
+ * @return The fully created config instance
  */
 WwtConfig *wwt_config_new(
     const wbcffi_config_entry *config_entries,

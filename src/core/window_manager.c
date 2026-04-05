@@ -22,6 +22,7 @@ G_DEFINE_TYPE(WwtWindowManager, wwt_window_manager, G_TYPE_OBJECT);
  * Gets the generate tabs function from the window manager spec
  *
  * @param self The window manager struct
+ * @return The get_windows function from window manager spec
  */
 WindowManagerGetWindows wwt_window_manager_get_get_windows(
     WwtWindowManager *self
@@ -34,6 +35,7 @@ WindowManagerGetWindows wwt_window_manager_get_get_windows(
  *
  * @param self Window manager struct
  * @param type The click handler type
+ * @return The click handler from window manager spec
  */
 WindowManagerClickHandler wwt_window_manager_get_click_handler(
     WwtWindowManager *self,
@@ -60,6 +62,7 @@ WindowManagerClickHandler wwt_window_manager_get_click_handler(
  *
  * @param self
  * @param wm_id The window manager id
+ * @return TRUE if sucessfully initialized else FALSE
  */
 static gboolean wwt_window_manager_init_spec(
     WwtWindowManager *self,
@@ -130,7 +133,9 @@ static void wwt_window_manager_class_init(WwtWindowManagerClass *klass) {
 /**
  * Create the window manager
  *
+ * @param app The app instance
  * @param wm_id The name of window manager
+ * @return The fully created window manager instance
  */
 WwtWindowManager *window_manager_new(WwtApp *app, WindowManagerId wm_id) {
     WwtWindowManager *self = g_object_new(WWT_WINDOW_MANAGER_TYPE, NULL);
