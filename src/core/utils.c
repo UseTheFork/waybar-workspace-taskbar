@@ -1,3 +1,4 @@
+#include "utils.h"
 #include "glib.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -77,4 +78,26 @@ int socket_connect(const char *socket_path) {
     }
 
     return fd;
+}
+
+/**
+ * Creates the json parser
+ *
+ * @param json_str The string you want the parser to populate
+ * @return The parser
+ */
+JsonParser *create_json_parser(const char *json_str) {
+    JsonParser *parser = json_parser_new();
+    GError *error = NULL;
+    json_parser_load_from_data(parser, json_str, -1, &error);
+
+    if (error) {
+        g_warning("Parse error: %s", error->message);
+        g_error_free(error);
+        g_object_unref(parser);
+
+        return NULL;
+    }
+
+    return parser;
 }

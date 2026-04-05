@@ -61,25 +61,3 @@ void wm_win_destroy(WindowManagerWindow *win) {
     g_free(win->app_id);
     g_free(win);
 }
-
-/**
- * Creates the json parser
- *
- * @param json_str The string you want the parser to populate
- * @return The parser
- */
-JsonParser *create_parser(const char *json_str) {
-    JsonParser *parser = json_parser_new();
-    GError *error = NULL;
-    json_parser_load_from_data(parser, json_str, -1, &error);
-
-    if (error) {
-        g_warning("Parse error: %s", error->message);
-        g_error_free(error);
-        g_object_unref(parser);
-
-        return NULL;
-    }
-
-    return parser;
-}

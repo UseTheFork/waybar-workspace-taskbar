@@ -13,5 +13,7 @@ void *wbcffi_init(
 }
 
 void wbcffi_deinit(void *instance) {
-    g_object_unref(instance);
+    if (instance) {
+        g_object_unref(instance);
+    }
 }

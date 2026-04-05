@@ -110,6 +110,14 @@ WwtApp *wwt_app_new(
 
     self->waybar_module = init_info->obj;
     self->config = wwt_config_new(config_entries, config_entries_len);
+
+    if (wwt_config_get_wm_id(self->config) == WM_ID_UNSUPPORTED) {
+        g_object_unref(self);
+        g_critical("Waybar Workspace Taskbar: unsupported window_manager");
+
+        return NULL;
+    }
+
     self->window_manager = window_manager_new(self, WM_ID_NIRI);
 
     // Add a container for displaying the tabs

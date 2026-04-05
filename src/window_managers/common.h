@@ -1,7 +1,6 @@
 #pragma once
 
 #include "glib.h"
-#include <json-glib/json-glib.h>
 
 typedef struct WindowManagerWindow WindowManagerWindow;
 
@@ -15,7 +14,6 @@ struct WindowManagerWindow {
 };
 
 gboolean wm_click_execute(const char *format, const char *id);
-JsonParser *create_parser(const char *json_str);
 
 WindowManagerWindow *wm_win_create(
     const gchar *id,

@@ -23,8 +23,6 @@ static int events_constructor() {
     const char *req = "\"EventStream\"\n";
     write(fd, req, strlen(req));
 
-    printf("niri socket connecting\n");
-
     return fd;
 }
 
@@ -64,8 +62,6 @@ static gboolean events_reader(FILE *socket_file, WindowManagerEvent *event) {
  * @param user_data any data that was passed in when subscribe was called
  */
 static void events_callback(WindowManagerEvent *event, gpointer user_data) {
-    printf("%s\n", event->msg);
-
     WwtApp *app = user_data;
     WwtTabs *tabs = wwt_app_get_tabs(app);
 
@@ -135,7 +131,7 @@ static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
     if (!ws_json)
         return FALSE;
 
-    JsonParser *ws_parser = create_parser(ws_json);
+    JsonParser *ws_parser = create_json_parser(ws_json);
     if (!ws_parser) {
         g_free(ws_json);
         return FALSE;
@@ -190,7 +186,7 @@ static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
         return FALSE;
     }
 
-    JsonParser *win_parser = create_parser(win_json);
+    JsonParser *win_parser = create_json_parser(win_json);
     if (!win_parser) {
         g_object_unref(ws_parser);
         g_free(ws_json);

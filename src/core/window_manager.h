@@ -19,7 +19,13 @@ typedef struct _WwtWindowManager WwtWindowManager;
 typedef struct _WindowManagerEvents WindowManagerEvents;
 typedef struct _WindowManagerEventsSubscription WindowManagerEventsSubscription;
 
-typedef enum { WM_ID_SWAY, WM_ID_NIRI, WM_ID_HYPRLAND } WindowManagerId;
+typedef enum {
+    WM_ID_UNSUPPORTED,
+    WM_ID_SWAY,
+    WM_ID_NIRI,
+    WM_ID_HYPRLAND
+} WindowManagerId;
+
 typedef enum {
     WM_CLICK_FOCUS,
     WM_CLICK_FLOAT,
