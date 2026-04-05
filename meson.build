@@ -17,6 +17,7 @@ src_files = files(
   'src/widgets/tabs.c',
   'src/window_managers/niri.c',
   'src/window_managers/sway.c',
+  'src/window_managers/hyprland.c',
   'src/window_managers/common.c'
 ) 
 

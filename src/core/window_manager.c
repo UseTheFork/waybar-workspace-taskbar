@@ -1,5 +1,6 @@
 #include "window_manager.h"
 #include "window_manager_events.h"
+#include "window_managers/hyprland.h"
 #include "window_managers/niri.h"
 #include "window_managers/sway.h"
 #include <fcntl.h>
@@ -77,6 +78,12 @@ static gboolean wwt_window_manager_init_spec(
 
     if (wm_id == WM_ID_SWAY) {
         self->spec = window_manager_spec_create_sway();
+
+        return TRUE;
+    }
+
+    if (wm_id == WM_ID_HYPRLAND) {
+        self->spec = window_manager_spec_create_hyprland();
 
         return TRUE;
     }
