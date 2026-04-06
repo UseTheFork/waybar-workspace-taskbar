@@ -1,7 +1,6 @@
 #include "sway.h"
 #include "common.h"
 #include "core/app.h"
-#include "core/config.h"
 #include "core/utils.h"
 #include "glib.h"
 #include "widgets/taskbar.h"
@@ -257,75 +256,70 @@ static void walk_tree(
  * @return TRUE if successfully fetched windows else FALSE
  */
 static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
-    WwtConfig *config = wwt_app_get_config(app);
-    const char *config_output = wwt_config_get_output(config);
+    const char *monitor_name = "HDMI-A-1";
 
     char *json_str = cmd_output("swaymsg -t get_tree");
-    if (!json_str)
+
+    if (!json_str) {
         return FALSE;
+    }
 
     JsonParser *parser = create_json_parser(json_str);
+
     if (!parser) {
         g_free(json_str);
+
         return FALSE;
     }
 
     JsonNode *root = json_parser_get_root(parser);
     JsonObject *root_obj = json_node_get_object(root);
     JsonArray *outputs = json_object_get_array_member(root_obj, "nodes");
+
     if (!outputs) {
         g_object_unref(parser);
         g_free(json_str);
         return FALSE;
     }
 
-    // If no config_output, find the focused output id from root's focus array
-    gint64 focused_output_id = -1;
-    if (!config_output || !*config_output) {
-        JsonArray *focus = json_object_get_array_member(root_obj, "focus");
-        if (focus && json_array_get_length(focus) > 0) {
-            focused_output_id = json_array_get_int_element(focus, 0);
-        }
-    }
-
     guint outputs_len = json_array_get_length(outputs);
+
     for (guint i = 0; i < outputs_len; i++) {
         JsonObject *output = json_array_get_object_element(outputs, i);
         const gchar *name = json_object_get_string_member(output, "name");
-        if (!name)
-            continue;
 
-        if (config_output && *config_output) {
-            if (strcmp(name, config_output) != 0)
-                continue;
-        } else {
-            gint64 id = json_object_get_int_member(output, "id");
-            if (id != focused_output_id)
-                continue;
+        if (!name || strcmp(name, monitor_name) != 0) {
+            continue;
         }
 
         const gchar *current_ws =
             json_object_get_string_member(output, "current_workspace");
-        if (!current_ws)
+
+        if (!current_ws) {
             continue;
+        }
 
         JsonArray *nodes = json_object_get_array_member(output, "nodes");
-        if (!nodes)
+
+        if (!nodes) {
             continue;
+        }
 
         guint nodes_len = json_array_get_length(nodes);
+
         for (guint j = 0; j < nodes_len; j++) {
             JsonObject *ws = json_array_get_object_element(nodes, j);
             const gchar *ws_name = json_object_get_string_member(ws, "name");
+
             if (ws_name && strcmp(ws_name, current_ws) == 0) {
                 walk_tree(wins, ws, ws_name);
             }
         }
-        break;
     }
 
     g_object_unref(parser);
     g_free(json_str);
+
     return TRUE;
 }
 
