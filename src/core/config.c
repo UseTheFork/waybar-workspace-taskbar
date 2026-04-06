@@ -11,6 +11,7 @@ struct _WwtConfig {
     WindowManagerId window_manager_id;
     gboolean show_title;
     gboolean show_icon;
+    int max_tabs;
     int title_max_chars;
     char *output;
 };
@@ -25,6 +26,7 @@ G_DEFINE_TYPE(WwtConfig, wwt_config, G_TYPE_OBJECT);
 void wwt_config_log_entries(WwtConfig *self) {
     printf("Config Entries\n");
     printf("output: %s\n", self->output);
+    printf("max_tabs: %d\n", self->max_tabs);
     printf("window_manager_id: %d\n", self->window_manager_id);
     printf("show_title: %d\n", self->show_title);
     printf("show_icon: %d\n", self->show_icon);
@@ -79,6 +81,16 @@ gboolean wwt_config_get_show_icon(WwtConfig *self) {
  */
 int wwt_config_get_title_max_chars(WwtConfig *self) {
     return self->title_max_chars;
+}
+
+/**
+ * Gets the max_tabs value
+ *
+ * @param self
+ * @return The max_tabs value
+ */
+int wwt_config_get_max_tabs(WwtConfig *self) {
+    return self->max_tabs;
 }
 
 /**
@@ -140,6 +152,14 @@ static void parse_config_entries(
                 self->show_title = TRUE;
             } else {
                 self->show_icon = FALSE;
+            }
+        }
+
+        if (strcmp("max_tabs", config_entries[i].key) == 0) {
+            int max_tabs = json_node_get_int(node);
+
+            if (max_tabs > 0) {
+                self->max_tabs = max_tabs;
             }
         }
 

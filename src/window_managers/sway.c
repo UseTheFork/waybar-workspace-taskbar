@@ -3,7 +3,7 @@
 #include "core/app.h"
 #include "core/utils.h"
 #include "glib.h"
-#include "widgets/tabs.h"
+#include "widgets/taskbar.h"
 #include <stdio.h>
 
 #define SWAY_MAGIC "i3-ipc"
@@ -100,9 +100,9 @@ static gboolean events_reader(FILE *socket_file, WindowManagerEvent *event) {
  */
 static void events_callback(WindowManagerEvent *event, gpointer user_data) {
     WwtApp *app = user_data;
-    WwtTabs *tabs = wwt_app_get_tabs(app);
+    WwtTaskbar *taskbar = wwt_app_get_taskbar(app);
 
-    wwt_tabs_generate_tabs(tabs);
+    wwt_taskbar_generate_tabs(taskbar);
 }
 
 /**

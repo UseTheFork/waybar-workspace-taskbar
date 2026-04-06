@@ -14,7 +14,7 @@ src_files = files(
   'src/core/window_manager.c',
   'src/core/window_manager_events.c',
   'src/widgets/tab.c',
-  'src/widgets/tabs.c',
+  'src/widgets/taskbar.c',
   'src/window_managers/niri.c',
   'src/window_managers/sway.c',
   'src/window_managers/hyprland.c',

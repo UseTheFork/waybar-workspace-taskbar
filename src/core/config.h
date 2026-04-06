@@ -12,6 +12,7 @@ WindowManagerId wwt_config_get_wm_id(WwtConfig *self);
 const char *wwt_config_get_output(WwtConfig *self);
 gboolean wwt_config_get_show_icon(WwtConfig *self);
 gboolean wwt_config_get_show_title(WwtConfig *self);
+int wwt_config_get_max_tabs(WwtConfig *self);
 int wwt_config_get_title_max_chars(WwtConfig *self);
 
 WwtConfig *wwt_config_new(

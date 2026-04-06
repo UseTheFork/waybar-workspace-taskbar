@@ -5,7 +5,7 @@
 
 G_BEGIN_DECLS;
 
-typedef struct _WwtTabs WwtTabs;
+typedef struct _WwtTaskbar WwtTaskbar;
 typedef struct _WwtConfig WwtConfig;
 typedef struct _WwtWindowManager WwtWindowManager;
 
@@ -19,7 +19,7 @@ WwtApp *wwt_app_new(
     size_t config_entries_len
 );
 
-WwtTabs *wwt_app_get_tabs(WwtApp *self);
+WwtTaskbar *wwt_app_get_taskbar(WwtApp *self);
 WwtConfig *wwt_app_get_config(WwtApp *self);
 WwtWindowManager *wwt_app_get_window_manager(WwtApp *self);
 

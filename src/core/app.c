@@ -1,7 +1,7 @@
 #include "app.h"
 #include "config.h"
 #include "wbcffi.h"
-#include "widgets/tabs.h"
+#include "widgets/taskbar.h"
 #include "window_manager.h"
 
 struct _WwtApp {
@@ -9,20 +9,20 @@ struct _WwtApp {
 
     wbcffi_module *waybar_module;
     WwtConfig *config;
-    WwtTabs *tabs;
+    WwtTaskbar *taskbar;
     WwtWindowManager *window_manager;
 };
 
 G_DEFINE_TYPE(WwtApp, wwt_app, G_TYPE_OBJECT);
 
 /**
- * Gets the tabs instance
+ * Gets the taskbar widget
  *
  * @param self
- * @return The tabs widget
+ * @return The taskbar
  */
-WwtTabs *wwt_app_get_tabs(WwtApp *self) {
-    return self->tabs;
+WwtTaskbar *wwt_app_get_taskbar(WwtApp *self) {
+    return self->taskbar;
 }
 
 /**
@@ -132,8 +132,8 @@ WwtApp *wwt_app_new(
 
     // Add a container for displaying the tabs
     GtkContainer *root = init_info->get_root_widget(init_info->obj);
-    self->tabs = wwt_tabs_new(self);
-    gtk_container_add(GTK_CONTAINER(root), GTK_WIDGET(self->tabs));
+    self->taskbar = wwt_taskbar_new(self);
+    gtk_container_add(GTK_CONTAINER(root), GTK_WIDGET(self->taskbar));
 
     return self;
 }

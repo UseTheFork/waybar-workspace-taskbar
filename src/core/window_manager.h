@@ -49,7 +49,7 @@ typedef void (*WindowManagerEventsCallback)(
     gpointer user_data
 );
 typedef gboolean (*WindowManagerClickHandler)(const char *id);
-typedef gboolean (*WindowManagerGetWindows)(WwtApp *app, GPtrArray *tabs);
+typedef gboolean (*WindowManagerGetWindows)(WwtApp *app, GPtrArray *wins);
 
 typedef struct WindowManagerSpec {
     WindowManagerEventsConstructor events_constructor;
