@@ -117,7 +117,13 @@ static void finalize(GObject *obj) {
         self->events_subscription_id
     );
 
-    window_manager_events_destroy(self->events, self->spec->events_destructor);
+    if (self->events && self->spec) {
+        window_manager_events_destroy(
+            self->events,
+            self->spec->events_destructor
+        );
+    }
+
     g_free(self->spec);
 
     printf("calling finalize on window manager\n");
@@ -159,7 +165,7 @@ WwtWindowManager *window_manager_new(WwtApp *app, WindowManagerId wm_id) {
     gboolean spec_initialized = wwt_window_manager_init_spec(self, wm_id);
 
     if (!spec_initialized) {
-        g_clear_object(&self);
+        g_object_unref(self);
         return NULL;
     }
 
@@ -169,7 +175,7 @@ WwtWindowManager *window_manager_new(WwtApp *app, WindowManagerId wm_id) {
     );
 
     if (!self->events) {
-        g_clear_object(&self);
+        g_object_unref(self);
         return NULL;
     }
 
@@ -178,6 +184,11 @@ WwtWindowManager *window_manager_new(WwtApp *app, WindowManagerId wm_id) {
         self->spec->events_callback,
         app
     );
+
+    if (self->events_subscription_id < 0) {
+        g_object_unref(self);
+        return NULL;
+    }
 
     return self;
 }

@@ -170,7 +170,8 @@ void window_manager_events_destroy(
  * @param events The events instance
  * @param cb The function to call on an event
  * @param user_data Any data to pass to the callback
- * @return The id/pos of the subscription in the subscription array
+ * @return The id/pos of the subscription in the subscription array -1 if
+ * failure
  */
 int window_manager_events_subscribe(
     WindowManagerEvents *events,
