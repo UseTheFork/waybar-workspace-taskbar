@@ -1,8 +1,8 @@
-#include "niri.h"
 #include "common.h"
 #include "core/config.h"
 #include "core/utils.h"
 #include "glib.h"
+#include "niri.h"
 #include "widgets/taskbar.h"
 #include <stdio.h>
 
@@ -162,9 +162,9 @@ static int should_swap(WindowManagerWindow *cur, WindowManagerWindow *prev) {
  * @return TRUE if successfully fetched windows else FALSE
  */
 static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
-    WwtConfig *config = wwt_app_get_config(app);
-    const char *config_output = wwt_config_get_output(config);
+    const char *monitor_name = "HDMI-A-1";
 
+    // Step 1: find the focused workspace for this monitor
     char *ws_json = cmd_output("niri msg -j workspaces");
     if (!ws_json)
         return FALSE;
@@ -190,24 +190,14 @@ static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
     for (guint i = 0; i < ws_len; i++) {
         JsonObject *ws = json_array_get_object_element(workspaces, i);
 
+        gboolean is_focused = json_object_get_boolean_member(ws, "is_focused");
+        if (!is_focused) {
+            continue;
+        }
+
         const gchar *output = json_object_get_string_member(ws, "output");
-
-        if (config_output && *config_output) {
-            // Config output set: find the active (is_active) workspace on that
-            // monitor
-            if (!output || strcmp(output, config_output) != 0)
-                continue;
-
-            gboolean is_active =
-                json_object_get_boolean_member(ws, "is_active");
-            if (!is_active)
-                continue;
-        } else {
-            // No config output: find the globally focused workspace
-            gboolean is_focused =
-                json_object_get_boolean_member(ws, "is_focused");
-            if (!is_focused)
-                continue;
+        if (!output || strcmp(output, monitor_name) != 0) {
+            continue;
         }
 
         focused_ws_id = json_object_get_int_member(ws, "id");

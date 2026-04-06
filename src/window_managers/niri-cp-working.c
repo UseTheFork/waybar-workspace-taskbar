@@ -193,8 +193,7 @@ static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
         const gchar *output = json_object_get_string_member(ws, "output");
 
         if (config_output && *config_output) {
-            // Config output set: find the active (is_active) workspace on that
-            // monitor
+            // Config output set: find the active workspace on that monitor
             if (!output || strcmp(output, config_output) != 0)
                 continue;
 
@@ -203,11 +202,36 @@ static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
             if (!is_active)
                 continue;
         } else {
-            // No config output: find the globally focused workspace
+            // No config output: find the focused output's active workspace
             gboolean is_focused =
                 json_object_get_boolean_member(ws, "is_focused");
             if (!is_focused)
                 continue;
+
+            // 'is_focused' on a workspace means this output is focused.
+            // Now we want the active workspace on this same output.
+            // If this workspace is also active, great. Otherwise, do a second
+            // pass.
+            gboolean is_active =
+                json_object_get_boolean_member(ws, "is_active");
+            if (!is_active) {
+                // Find the active workspace on this output
+                const gchar *focused_output = output;
+                for (guint k = 0; k < ws_len; k++) {
+                    JsonObject *ws2 =
+                        json_array_get_object_element(workspaces, k);
+                    const gchar *out2 =
+                        json_object_get_string_member(ws2, "output");
+                    if (!out2 || strcmp(out2, focused_output) != 0)
+                        continue;
+                    gboolean active2 =
+                        json_object_get_boolean_member(ws2, "is_active");
+                    if (!active2)
+                        continue;
+                    ws = ws2;
+                    break;
+                }
+            }
         }
 
         focused_ws_id = json_object_get_int_member(ws, "id");
