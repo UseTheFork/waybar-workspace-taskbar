@@ -36,6 +36,7 @@ typedef struct {
     char *msg;
     size_t msg_len;
     size_t msg_size;
+    gint debounce_timeout_id;
 } WindowManagerEvent;
 
 typedef int (*WindowManagerEventsConstructor)();

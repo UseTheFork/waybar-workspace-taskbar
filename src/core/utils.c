@@ -101,3 +101,16 @@ JsonParser *create_json_parser(const char *json_str) {
 
     return parser;
 }
+
+/**
+ * Gets the current timestamp in ms
+ *
+ * @return The timestamp in ms
+ */
+long long get_timestamp() {
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    long long ms = (long long)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+
+    return ms;
+}

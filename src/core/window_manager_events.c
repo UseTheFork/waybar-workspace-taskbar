@@ -5,7 +5,7 @@
 #include <sys/poll.h>
 #include <unistd.h>
 
-#define WM_EVENTS_CALLBACK_TIMEOUT 50
+#define WM_EVENTS_POLLING_TIMEOUT 20
 #define WM_EVENTS_MSG_SIZE 4096
 
 struct _WindowManagerEvents {
@@ -46,6 +46,7 @@ static WindowManagerEvent *window_manager_event_create() {
     event->msg = msg;
     event->msg_len = 0;
     event->msg_size = WM_EVENTS_MSG_SIZE;
+    event->debounce_timeout_id = 0;
 
     return event;
 }
@@ -127,7 +128,7 @@ WindowManagerEvents *window_manager_events_create(
     events->poll_fd.fd = fd;
     events->poll_fd.events = POLLIN;
     events->timeout_id = g_timeout_add(
-        WM_EVENTS_CALLBACK_TIMEOUT,
+        WM_EVENTS_POLLING_TIMEOUT,
         window_manager_events_poll,
         events
     );
