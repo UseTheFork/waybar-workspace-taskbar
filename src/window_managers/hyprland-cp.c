@@ -1,7 +1,6 @@
 #include "hyprland.h"
 #include "common.h"
 #include "core/app.h"
-#include "core/config.h"
 #include "core/utils.h"
 #include "glib.h"
 #include "widgets/taskbar.h"
@@ -168,25 +167,29 @@ static int should_swap(WindowManagerWindow *cur, WindowManagerWindow *prev) {
  * @return TRUE if successfully fetched windows else FALSE
  */
 static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
-    WwtConfig *config = wwt_app_get_config(app);
-    const char *config_output = wwt_config_get_output(config);
+    const char *monitor_name = "HDMI-A-1";
 
     char *batch_json = cmd_output("hyprctl --batch \"clients; monitors\" -j");
-    if (!batch_json)
+
+    if (!batch_json) {
         return FALSE;
+    }
 
     char *split = strstr(batch_json, "\n\n");
     if (!split) {
         g_free(batch_json);
         return FALSE;
     }
+
     *split = '\0';
     char *clients_json = batch_json;
     char *monitors_json = split + 2;
 
     JsonParser *monitors_parser = create_json_parser(monitors_json);
+
     if (!monitors_parser) {
         g_free(batch_json);
+
         return FALSE;
     }
 
@@ -201,29 +204,24 @@ static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
         JsonObject *monitor = json_array_get_object_element(monitors, i);
         const gchar *name = json_object_get_string_member(monitor, "name");
 
-        if (config_output && *config_output) {
-            if (!name || strcmp(name, config_output) != 0)
-                continue;
-        } else {
-            gboolean focused =
-                json_object_get_boolean_member(monitor, "focused");
-            if (!focused)
-                continue;
-        }
+        if (name && strcmp(name, monitor_name) == 0) {
+            JsonObject *active_ws =
+                json_object_get_object_member(monitor, "activeWorkspace");
 
-        JsonObject *active_ws =
-            json_object_get_object_member(monitor, "activeWorkspace");
-        if (active_ws) {
-            gint64 ws_id = json_object_get_int_member(active_ws, "id");
-            const gchar *ws_name =
-                json_object_get_string_member(active_ws, "name");
-            if (ws_id && ws_name) {
-                active_workspace_id = ws_id;
-                workspace_name = g_strdup(ws_name);
+            if (active_ws) {
+                gint64 ws_id = json_object_get_int_member(active_ws, "id");
+                const gchar *ws_name =
+                    json_object_get_string_member(active_ws, "name");
+
+                if (ws_id && ws_name) {
+                    active_workspace_id = ws_id;
+                    workspace_name = g_strdup(ws_name);
+                }
             }
+            break;
         }
-        break;
     }
+
     g_object_unref(monitors_parser);
 
     if (active_workspace_id == -1) {
