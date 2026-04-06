@@ -34,8 +34,8 @@ typedef enum {
 
 typedef struct {
     char *msg;
-    int msg_len;
-    int msg_size;
+    size_t msg_len;
+    size_t msg_size;
 } WindowManagerEvent;
 
 typedef int (*WindowManagerEventsConstructor)();

@@ -45,7 +45,7 @@ static void events_destructor(int fd, FILE *socket_file) {
  * @return TRUE if should emit the event else FALSE
  */
 static gboolean events_reader(FILE *socket_file, WindowManagerEvent *event) {
-    if (getline(&event->msg, (size_t *)&event->msg_size, socket_file) <= 0) {
+    if (getline(&event->msg, &event->msg_size, socket_file) <= 0) {
         clearerr(socket_file);
         return FALSE;
     }

@@ -77,7 +77,7 @@ static gboolean events_reader(FILE *socket_file, WindowManagerEvent *event) {
     memcpy(&payload_len, header + SWAY_MAGIC_LEN, 4);
     memcpy(&msg_type, header + SWAY_MAGIC_LEN + 4, 4);
 
-    if (payload_len + 1 > (uint32_t)event->msg_size) {
+    if ((size_t)payload_len + 1 > event->msg_size) {
         event->msg = realloc(event->msg, payload_len + 1);
         event->msg_size = payload_len + 1;
     }
