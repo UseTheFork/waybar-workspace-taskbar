@@ -1,11 +1,13 @@
 #include "tab.h"
 #include "core/app.h"
+#include "core/config.h"
 #include "core/window_manager.h"
 #include <gio/gdesktopappinfo.h>
 #include <stdio.h>
 
 #define TAB_CLASS_NAME "tab"
 #define TAB_CLASS_NAME_FOCUSED "focused"
+#define TITLE_MIN_CHARS 3
 
 struct _WwtTab {
     GtkButton parent_instance;
@@ -28,6 +30,10 @@ G_DEFINE_TYPE(WwtTab, wwt_tab, GTK_TYPE_BUTTON);
  * @param max_len The max characters for the string to be including elipsis
  */
 static void truncate_title(gchar *title, int max_len) {
+    if (max_len < TITLE_MIN_CHARS) {
+        return;
+    }
+
     int len = strlen(title);
 
     if (len > max_len && len > 3) {
@@ -63,6 +69,30 @@ static gboolean set_btn_icon(WwtTab *self) {
     }
 
     return TRUE;
+}
+
+/**
+ * Sets up the button title, icon and alignment based on user config
+ *
+ * @param self
+ */
+static void setup_title_and_icon(WwtTab *self) {
+    WwtApp *app = self->app;
+    WwtConfig *config = wwt_app_get_config(app);
+
+    gboolean show_title = wwt_config_get_show_title(config);
+    gboolean show_icon = wwt_config_get_show_icon(config);
+    int title_max_chars = wwt_config_get_title_max_chars(config);
+
+    if (show_icon) {
+        set_btn_icon(self);
+        gtk_button_set_always_show_image(GTK_BUTTON(self), TRUE);
+    }
+
+    if (show_title) {
+        truncate_title(self->title, title_max_chars);
+        gtk_button_set_label(GTK_BUTTON(self), self->title);
+    }
 }
 
 /**
@@ -195,10 +225,7 @@ void wwt_tab_update(
     self->x = x;
     self->y = y;
 
-    truncate_title(self->title, 20);
-
-    gtk_button_set_label(GTK_BUTTON(self), self->title);
-    set_btn_icon(self);
+    setup_title_and_icon(self);
 
     GtkStyleContext *ctx = gtk_widget_get_style_context(GTK_WIDGET(self));
     if (self->focused) {
@@ -239,22 +266,19 @@ WwtTab *wwt_tab_new(
     self->x = x;
     self->y = y;
 
-    // set up classes
-    GtkStyleContext *ctx = gtk_widget_get_style_context(GTK_WIDGET(self));
+    WwtConfig *config = wwt_app_get_config(app);
 
+    GtkStyleContext *ctx = gtk_widget_get_style_context(GTK_WIDGET(self));
     gtk_style_context_add_class(ctx, TAB_CLASS_NAME);
 
     if (self->focused) {
         gtk_style_context_add_class(ctx, TAB_CLASS_NAME_FOCUSED);
     }
 
-    // set up label
-    truncate_title(self->title, 20);
-    set_btn_icon(self);
-    gtk_button_set_label(GTK_BUTTON(self), self->title);
-    gtk_button_set_always_show_image(GTK_BUTTON(self), TRUE);
+    setup_title_and_icon(self);
 
-    // gtk_button_set_alignment(GTK_BUTTON(self), 0.0, 0.5);
+    gfloat text_align = wwt_config_get_text_align(config);
+    gtk_button_set_alignment(GTK_BUTTON(self), text_align, 0.5);
 
     return self;
 }

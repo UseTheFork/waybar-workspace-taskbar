@@ -14,6 +14,7 @@ struct _WwtConfig {
     int max_tabs;
     int title_max_chars;
     char *output;
+    gfloat text_align;
 };
 
 G_DEFINE_TYPE(WwtConfig, wwt_config, G_TYPE_OBJECT);
@@ -94,6 +95,16 @@ int wwt_config_get_max_tabs(WwtConfig *self) {
 }
 
 /**
+ * Gets the text_align value
+ *
+ * @param self
+ * @return The text_align value
+ */
+gfloat wwt_config_get_text_align(WwtConfig *self) {
+    return self->text_align;
+}
+
+/**
  * Parse the config and set up user options
  *
  * @param config_entries The configuration entries from the module
@@ -171,6 +182,18 @@ static void parse_config_entries(
             }
         }
 
+        if (strcmp("text_align", config_entries[i].key) == 0) {
+            const char *text_align = json_node_get_string(node);
+
+            if (strcmp("center", text_align) == 0) {
+                self->text_align = TAB_TEXT_ALIGN_CENTER;
+            } else if (strcmp("right", text_align) == 0) {
+                self->text_align = TAB_TEXT_ALIGN_RIGHT;
+            } else {
+                self->text_align = TAB_TEXT_ALIGN_LEFT;
+            }
+        }
+
         g_object_unref(parser);
     }
 }
@@ -215,11 +238,13 @@ static void wwt_config_init(WwtConfig *self) {
     printf("calling init on config\n");
 
     // Set default config options
+    self->window_manager_id = WM_ID_UNSUPPORTED;
     self->output = NULL;
     self->show_icon = TRUE;
     self->show_title = FALSE;
     self->title_max_chars = -1;
-    self->window_manager_id = WM_ID_UNSUPPORTED;
+    self->max_tabs = -1;
+    self->text_align = TAB_TEXT_ALIGN_LEFT;
 }
 
 /**
@@ -246,6 +271,14 @@ WwtConfig *wwt_config_new(
     WwtConfig *self = g_object_new(WWT_CONFIG_TYPE, NULL);
 
     parse_config_entries(self, config_entries, config_entries_len);
+
+    // for (int i = 0; i < config_entries_len; i++) {
+    //     printf(
+    //         "key: %s\nvalue: %s\n\n",
+    //         config_entries[i].key,
+    //         config_entries[i].value
+    //     );
+    // }
 
     return self;
 }
