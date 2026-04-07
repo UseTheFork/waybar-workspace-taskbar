@@ -4,7 +4,7 @@
 
 Workspace taskbar for window managers that shows only open windows from the current workspace. This differs from included wlr taskbar which shows all open windows on all workspaces. This takes advantage of the waybar cffi module [Waybar CFFI](https://github.com/Alexays/Waybar/wiki/Module:-CFFI).
 
-This was developed mostly due to non traditional window manager layouts like scrolling, fullscreen tabbed or monocle, where you can easily lose track of your open windows. This gives you the ability to easily visualize your open windows. Tabs will try to be sorted so they reflect the left and right cycling positions of your windows.
+This was developed mostly due to non traditional window manager layouts like scrolling, fullscreen tabbed, or monocle where you can easily lose track of your open windows. This gives you the ability to easily visualize your open windows. Tabs will try to be sorted so they reflect the left and right cycling positions of your windows.
 
 ## Suported Window Managers
 
