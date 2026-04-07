@@ -1,12 +1,14 @@
 # Waybar Workspace Taskbar
 
-Workspace taskbar for window managers that shows open windows from the working workspace only. The included wlr taskbar shows all open windows in all workspaces. This module only shows open windows on your current workspace. This takes advantage of the waybar cffi module [Waybar CFFI](https://github.com/Alexays/Waybar/wiki/Module:-CFFI).
+**Seems to be fairly stable but still considered alpha. Changes are likely.**
 
-This was developed because if you are in a scrolling, fullscreen tabbed or monocle layout, you can easily lose track of your open windows. This gives you the ability to easily visualize your open windows. Tabs will try to be sorted so they reflect the left and right cycling positions of your windows.
+Workspace taskbar for window managers that shows only open windows from the current workspace. This differs from included wlr taskbar which shows all open windows on all workspaces. This takes advantage of the waybar cffi module [Waybar CFFI](https://github.com/Alexays/Waybar/wiki/Module:-CFFI).
+
+This was developed mostly due to non traditional window manager layouts like scrolling, fullscreen tabbed or monocle, where you can easily lose track of your open windows. This gives you the ability to easily visualize your open windows. Tabs will try to be sorted so they reflect the left and right cycling positions of your windows.
 
 ## Suported Window Managers
 
-Window managers need to have the abilty for us to get the required data to display the windows. This would include an ipc or command line interface to listen to workspace events and fetch window data. Then some way to be able to send commands to focus, close and toggle float on windows.
+Window managers need to have the abilty for us to get the required data to display the windows. This would include an ipc or command line interface to listen to workspace and window events and fetch the required data. Then some way to be able to send commands to focus, close and toggle float on windows.
 
 Currently supported window managers.
 
@@ -48,16 +50,18 @@ Minimal example:
     "cffi/waybar-workspace-taskbar"
 ],
 "cffi/waybar-workspace-taskbar": {
-    "module_path": ".config/waybar/cffi/waybar-workspace-taskbar.so",
+    "module_path": "~/.config/waybar/cffi/waybar-workspace-taskbar.so",
     "window_manager": "sway"
 }
 ```
 
+Note: You may need to use absolute paths depending on your environment.
+
 ### Configuration Options
 
-** IMPORTANT: Configuration inside this module does not support comments in your json **
+**IMPORTANT: Configuration inside this module does not support comments in your json**
 
-Even though your using jsonc waybar doesn't parse out the comments whan passing them to the cffi module. So as of right now keep your comments outside the cffi module config.
+Even though your using jsonc waybar doesn't parse out the comments when passing them to the cffi module. So as of right now keep your comments outside the cffi module config.
 
 | Keys            | Required | Default  | Allowed                    | Description                                                                                                                                           |
 | --------------- | -------- | -------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -105,3 +109,7 @@ This is fairly simple.
 ## Known issues
 
 On Hyprland Monocle layout I've yet to figured out how to properly sort the windows. So windows will appear as they come from hyprland.
+
+## License
+
+Waybar Workspace Taskbar is licensed under the MIT license. See LICENSE for more information.
