@@ -70,9 +70,9 @@ static gboolean events_debounce_callback(gpointer user_data) {
     WwtTaskbar *taskbar = wwt_app_get_taskbar(app);
 
     wwt_taskbar_generate_tabs(taskbar);
-    printf("%s\n", event->msg);
 
     event->debounce_timeout_id = 0;
+
     return G_SOURCE_REMOVE;
 }
 
@@ -91,19 +91,33 @@ static void events_callback(WindowManagerEvent *event, gpointer user_data) {
         event->debounce_timeout_id = 0;
     }
 
-    DebounceCallbackData *callback_data =
-        g_malloc(sizeof(DebounceCallbackData));
+    JsonParser *parser = create_json_parser(event->msg);
+    JsonNode *root = json_parser_get_root(parser);
+    JsonObject *root_obj = json_node_get_object(root);
 
-    callback_data->event = event;
-    callback_data->app = app;
+    if (json_object_get_member(root_obj, "WindowOpenedOrChanged") ||
+        json_object_get_member(root_obj, "WorkspacesChanged") ||
+        json_object_get_member(root_obj, "WindowFocusChanged") ||
+        json_object_get_member(root_obj, "WorkspaceActivated") ||
+        json_object_get_member(root_obj, "WorkspaceActiveWindowChanged") ||
+        json_object_get_member(root_obj, "WorkspaceActiveWindowChanged") ||
+        json_object_get_member(root_obj, "OverviewOpenedOrClosed")) {
+        DebounceCallbackData *callback_data =
+            g_malloc(sizeof(DebounceCallbackData));
 
-    event->debounce_timeout_id = g_timeout_add_full(
-        G_PRIORITY_DEFAULT,
-        WM_CALLBACK_DEBOUNCE_TIMEOUT,
-        events_debounce_callback,
-        callback_data,
-        g_free
-    );
+        callback_data->event = event;
+        callback_data->app = app;
+
+        event->debounce_timeout_id = g_timeout_add_full(
+            G_PRIORITY_DEFAULT,
+            WM_CALLBACK_DEBOUNCE_TIMEOUT,
+            events_debounce_callback,
+            callback_data,
+            g_free
+        );
+    }
+
+    g_object_unref(parser);
 }
 
 /**

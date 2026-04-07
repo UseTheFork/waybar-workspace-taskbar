@@ -94,6 +94,14 @@ Simple example:
 }
 ```
 
+## Usage
+
+This is fairly simple.
+
+- Left Click: Focus Window
+- Right Click: Close Window
+- Middle Click: Toggle Float
+
 ## Known issues
 
 On Hyprland Monocle layout I've yet to figured out how to properly sort the windows. So windows will appear as they come from hyprland.
