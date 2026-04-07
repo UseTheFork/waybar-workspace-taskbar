@@ -135,5 +135,8 @@ WwtApp *wwt_app_new(
     self->taskbar = wwt_taskbar_new(self);
     gtk_container_add(GTK_CONTAINER(root), GTK_WIDGET(self->taskbar));
 
+    // Populate taskbar with tabs
+    wwt_taskbar_generate_tabs(self->taskbar);
+
     return self;
 }

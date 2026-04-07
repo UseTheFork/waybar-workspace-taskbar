@@ -86,22 +86,23 @@ static gboolean events_debounce_callback(gpointer user_data) {
 static void events_callback(WindowManagerEvent *event, gpointer user_data) {
     WwtApp *app = user_data;
 
-    if (event->debounce_timeout_id != 0) {
-        g_source_remove(event->debounce_timeout_id);
-        event->debounce_timeout_id = 0;
-    }
-
     JsonParser *parser = create_json_parser(event->msg);
     JsonNode *root = json_parser_get_root(parser);
     JsonObject *root_obj = json_node_get_object(root);
 
-    if (json_object_get_member(root_obj, "WindowOpenedOrChanged") ||
-        json_object_get_member(root_obj, "WorkspacesChanged") ||
-        json_object_get_member(root_obj, "WindowFocusChanged") ||
-        json_object_get_member(root_obj, "WorkspaceActivated") ||
-        json_object_get_member(root_obj, "WorkspaceActiveWindowChanged") ||
-        json_object_get_member(root_obj, "WorkspaceActiveWindowChanged") ||
-        json_object_get_member(root_obj, "OverviewOpenedOrClosed")) {
+    if (json_object_has_member(root_obj, "WindowOpenedOrChanged") ||
+        json_object_has_member(root_obj, "WorkspacesChanged") ||
+        json_object_has_member(root_obj, "WindowFocusChanged") ||
+        json_object_has_member(root_obj, "WorkspaceActivated") ||
+        json_object_has_member(root_obj, "WorkspaceActiveWindowChanged") ||
+        json_object_has_member(root_obj, "WorkspaceActiveWindowChanged") ||
+        json_object_has_member(root_obj, "OverviewOpenedOrClosed")) {
+
+        if (event->debounce_timeout_id != 0) {
+            g_source_remove(event->debounce_timeout_id);
+            event->debounce_timeout_id = 0;
+        }
+
         DebounceCallbackData *callback_data =
             g_malloc(sizeof(DebounceCallbackData));
 

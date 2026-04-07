@@ -185,12 +185,12 @@ static void parse_config_entries(
         if (strcmp("text_align", config_entries[i].key) == 0) {
             const char *text_align = json_node_get_string(node);
 
-            if (strcmp("center", text_align) == 0) {
-                self->text_align = TAB_TEXT_ALIGN_CENTER;
+            if (strcmp("left", text_align) == 0) {
+                self->text_align = TAB_TEXT_ALIGN_LEFT;
             } else if (strcmp("right", text_align) == 0) {
                 self->text_align = TAB_TEXT_ALIGN_RIGHT;
             } else {
-                self->text_align = TAB_TEXT_ALIGN_LEFT;
+                self->text_align = TAB_TEXT_ALIGN_CENTER;
             }
         }
 
@@ -244,7 +244,7 @@ static void wwt_config_init(WwtConfig *self) {
     self->show_title = FALSE;
     self->title_max_chars = -1;
     self->max_tabs = -1;
-    self->text_align = TAB_TEXT_ALIGN_LEFT;
+    self->text_align = TAB_TEXT_ALIGN_CENTER;
 }
 
 /**
@@ -271,14 +271,6 @@ WwtConfig *wwt_config_new(
     WwtConfig *self = g_object_new(WWT_CONFIG_TYPE, NULL);
 
     parse_config_entries(self, config_entries, config_entries_len);
-
-    // for (int i = 0; i < config_entries_len; i++) {
-    //     printf(
-    //         "key: %s\nvalue: %s\n\n",
-    //         config_entries[i].key,
-    //         config_entries[i].value
-    //     );
-    // }
 
     return self;
 }

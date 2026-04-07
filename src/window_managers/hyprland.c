@@ -79,7 +79,6 @@ static gboolean events_debounce_callback(gpointer user_data) {
     WwtTaskbar *taskbar = wwt_app_get_taskbar(app);
 
     wwt_taskbar_generate_tabs(taskbar);
-    printf("%s\n", event->msg);
 
     event->debounce_timeout_id = 0;
     return G_SOURCE_REMOVE;
@@ -95,24 +94,32 @@ static gboolean events_debounce_callback(gpointer user_data) {
 static void events_callback(WindowManagerEvent *event, gpointer user_data) {
     WwtApp *app = user_data;
 
-    if (event->debounce_timeout_id != 0) {
-        g_source_remove(event->debounce_timeout_id);
-        event->debounce_timeout_id = 0;
+    if (strncmp(event->msg, "windowtitle>>", strlen("windowtitle>>")) == 0 ||
+        strncmp(event->msg, "workspace>>", strlen("workspace>>")) == 0 ||
+        strncmp(event->msg, "activewindow>>", strlen("activewindow>>")) == 0 ||
+        strncmp(event->msg, "closewindow>>", strlen("closewindow>>")) == 0 ||
+        strncmp(event->msg, "openwindow>>", strlen("openwindow>>")) == 0 ||
+        strncmp(event->msg, "activewindow>>", strlen("activewindow>>")) == 0) {
+
+        if (event->debounce_timeout_id != 0) {
+            g_source_remove(event->debounce_timeout_id);
+            event->debounce_timeout_id = 0;
+        }
+
+        DebounceCallbackData *callback_data =
+            g_malloc(sizeof(DebounceCallbackData));
+
+        callback_data->event = event;
+        callback_data->app = app;
+
+        event->debounce_timeout_id = g_timeout_add_full(
+            G_PRIORITY_DEFAULT,
+            WM_CALLBACK_DEBOUNCE_TIMEOUT,
+            events_debounce_callback,
+            callback_data,
+            g_free
+        );
     }
-
-    DebounceCallbackData *callback_data =
-        g_malloc(sizeof(DebounceCallbackData));
-
-    callback_data->event = event;
-    callback_data->app = app;
-
-    event->debounce_timeout_id = g_timeout_add_full(
-        G_PRIORITY_DEFAULT,
-        WM_CALLBACK_DEBOUNCE_TIMEOUT,
-        events_debounce_callback,
-        callback_data,
-        g_free
-    );
 }
 
 /**
