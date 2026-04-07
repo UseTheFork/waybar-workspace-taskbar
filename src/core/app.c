@@ -56,8 +56,6 @@ static void dispose(GObject *obj) {
     g_clear_object(&self->config);
     g_clear_object(&self->window_manager);
 
-    printf("calling dipsose on app\n");
-
     G_OBJECT_CLASS(wwt_app_parent_class)->dispose(obj);
 }
 
@@ -67,10 +65,6 @@ static void dispose(GObject *obj) {
  * @param obj The obj struct
  */
 static void finalize(GObject *obj) {
-    WwtApp *self = WWT_APP(obj);
-
-    printf("calling finalize on app\n");
-
     G_OBJECT_CLASS(wwt_app_parent_class)->finalize(obj);
 }
 
@@ -80,7 +74,6 @@ static void finalize(GObject *obj) {
  * @param wwt The application struct
  */
 static void wwt_app_init(WwtApp *self) {
-    printf("calling init on app\n");
 }
 
 /**

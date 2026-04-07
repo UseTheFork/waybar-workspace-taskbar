@@ -206,8 +206,6 @@ static void parse_config_entries(
 static void dispose(GObject *obj) {
     WwtConfig *self = WWT_CONFIG(obj);
 
-    printf("calling dipsose on config\n");
-
     if (self->output) {
         g_free(self->output);
         self->output = NULL;
@@ -224,8 +222,6 @@ static void dispose(GObject *obj) {
 static void finalize(GObject *obj) {
     WwtConfig *self = WWT_CONFIG(obj);
 
-    printf("calling finalize on config\n");
-
     G_OBJECT_CLASS(wwt_config_parent_class)->finalize(obj);
 }
 
@@ -235,8 +231,6 @@ static void finalize(GObject *obj) {
  * @param self
  */
 static void wwt_config_init(WwtConfig *self) {
-    printf("calling init on config\n");
-
     // Set default config options
     self->window_manager_id = WM_ID_UNSUPPORTED;
     self->output = NULL;

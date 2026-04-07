@@ -97,10 +97,6 @@ static gboolean wwt_window_manager_init_spec(
  * @param obj The object struct
  */
 static void dispose(GObject *obj) {
-    WwtWindowManager *self = WWT_WINDOW_MANAGER(obj);
-
-    printf("calling dispose on window manager\n");
-
     G_OBJECT_CLASS(wwt_window_manager_parent_class)->dispose(obj);
 }
 
@@ -126,8 +122,6 @@ static void finalize(GObject *obj) {
 
     g_free(self->spec);
 
-    printf("calling finalize on window manager\n");
-
     G_OBJECT_CLASS(wwt_window_manager_parent_class)->finalize(obj);
 }
 
@@ -137,7 +131,6 @@ static void finalize(GObject *obj) {
  * @param wwt The application struct
  */
 static void wwt_window_manager_init(WwtWindowManager *self) {
-    printf("calling init on window manager\n");
 }
 
 /**

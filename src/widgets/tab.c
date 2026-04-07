@@ -158,10 +158,6 @@ static void wwt_tab_init(WwtTab *self) {
  * @param obj The stuct obj.
  */
 static void wwt_tab_dispose(GObject *obj) {
-    WwtTab *self = WWT_TAB(obj);
-
-    printf("calling dispose on %s\n", self->title);
-
     G_OBJECT_CLASS(wwt_tab_parent_class)->dispose(obj);
 }
 
@@ -172,8 +168,6 @@ static void wwt_tab_dispose(GObject *obj) {
  */
 static void wwt_tab_finalize(GObject *obj) {
     WwtTab *self = WWT_TAB(obj);
-
-    printf("calling finalize on %s\n", self->title);
 
     g_free(self->win_id);
     g_free(self->title);

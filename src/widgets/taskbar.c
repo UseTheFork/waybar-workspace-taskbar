@@ -190,10 +190,6 @@ static void wwt_taskbar_init(WwtTaskbar *self) {
  *
  */
 static void wwt_taskbar_dispose(GObject *obj) {
-    WwtTaskbar *self = WWT_TASKBAR(obj);
-
-    printf("calling dispose on tabs\n");
-
     G_OBJECT_CLASS(wwt_taskbar_parent_class)->dispose(obj);
 }
 
@@ -203,10 +199,6 @@ static void wwt_taskbar_dispose(GObject *obj) {
  * @param object The tabs struct
  */
 static void wwt_taskbar_finalize(GObject *obj) {
-    WwtTaskbar *self = WWT_TASKBAR(obj);
-
-    printf("calling finalize on tabs\n");
-
     G_OBJECT_CLASS(wwt_taskbar_parent_class)->finalize(obj);
 }
 
