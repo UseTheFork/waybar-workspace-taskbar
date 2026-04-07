@@ -70,7 +70,7 @@ Even though your using jsonc waybar doesn't parse out the comments when passing 
 | show_icon       | no       | true     | true, false                | Whether or not you want to show the application icon.                                                                                                 |
 | show_title      | no       | false    | true, false                | Whether or not you want to show the window title.                                                                                                     |
 | text_align      | no       | "center" | "left", "right", "center"  | Position of the text and icon in the tab.                                                                                                             |
-| max_tabs        | no       | -1       | int                        | Max amount of tabs to show -1 for unlimited. (See css configuration below for to show the overflow indicator)                                         |
+| max_tabs        | no       | -1       | int                        | Max amount of tabs to show -1 for unlimited. (See css configuration below to show the overflow indicator)                                             |
 | title_max_chars | no       | -1       | int > 3                    | Max amount of characters to show in the title, -1 for unlimited. (Note: this includes elipsis so if you set to 10, 3 of those characters will be ...) |
 
 ### Configuring Styles
