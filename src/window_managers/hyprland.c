@@ -91,9 +91,7 @@ static gboolean events_debounce_callback(gpointer user_data) {
  * @param user_data any data that was passed in when subscribe was called. app
  * in this instance
  */
-static void events_callback(WindowManagerEvent *event, gpointer user_data) {
-    WwtApp *app = user_data;
-
+static void events_callback(WindowManagerEvent *event, WwtApp *app) {
     if (strncmp(event->msg, "windowtitle>>", strlen("windowtitle>>")) == 0 ||
         strncmp(event->msg, "workspace>>", strlen("workspace>>")) == 0 ||
         strncmp(event->msg, "activewindow>>", strlen("activewindow>>")) == 0 ||

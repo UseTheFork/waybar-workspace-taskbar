@@ -12,7 +12,6 @@ src_files = files(
   'src/core/config.c',
   'src/core/utils.c',
   'src/core/window_manager.c',
-  'src/core/window_manager_events.c',
   'src/widgets/tab.c',
   'src/widgets/taskbar.c',
   'src/window_managers/niri.c',

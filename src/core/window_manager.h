@@ -47,7 +47,7 @@ typedef gboolean (*WindowManagerEventsReader)(
 );
 typedef void (*WindowManagerEventsCallback)(
     WindowManagerEvent *event,
-    gpointer user_data
+    WwtApp *app
 );
 typedef gboolean (*WindowManagerClickHandler)(const char *id);
 typedef gboolean (*WindowManagerGetWindows)(WwtApp *app, GPtrArray *wins);

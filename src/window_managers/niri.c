@@ -83,9 +83,7 @@ static gboolean events_debounce_callback(gpointer user_data) {
  * @param user_data any data that was passed in when subscribe was called. app
  * in this instance
  */
-static void events_callback(WindowManagerEvent *event, gpointer user_data) {
-    WwtApp *app = user_data;
-
+static void events_callback(WindowManagerEvent *event, WwtApp *app) {
     JsonParser *parser = create_json_parser(event->msg);
     JsonNode *root = json_parser_get_root(parser);
     JsonObject *root_obj = json_node_get_object(root);

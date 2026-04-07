@@ -1,12 +1,19 @@
 #include "window_manager.h"
-#include "window_manager_events.h"
 #include "window_managers/hyprland.h"
 #include "window_managers/niri.h"
 #include "window_managers/sway.h"
 #include <fcntl.h>
 #include <sys/poll.h>
 
-#define WM_EVENTS_MAX_CALlBACKS 8
+#define WM_EVENTS_POLLING_TIMEOUT 20
+#define WM_EVENTS_MSG_SIZE 4096
+
+typedef struct {
+    int timeout_id;
+    int socket_fd;
+    FILE *socket_file;
+    struct pollfd poll_fd;
+} WindowManagerEventsPollData;
 
 struct _WwtWindowManager {
     GObject parent;
@@ -14,8 +21,8 @@ struct _WwtWindowManager {
     WwtApp *app;
     WindowManagerId id;
     WindowManagerSpec *spec;
-    WindowManagerEvents *events;
-    int events_subscription_id;
+    WindowManagerEvent *event;
+    WindowManagerEventsPollData *poll_data;
 };
 
 G_DEFINE_TYPE(WwtWindowManager, wwt_window_manager, G_TYPE_OBJECT);
@@ -57,6 +64,125 @@ WindowManagerClickHandler wwt_window_manager_get_click_handler(
     }
 
     return NULL;
+}
+
+/**
+ * Sets non blocking on the socket file
+ *
+ * @param fd Socket file descriptor
+ */
+static void set_non_block(int fd) {
+    int flags = fcntl(fd, F_GETFL, 0);
+    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+}
+
+/**
+ * Creates the window manager event
+ *
+ * Uses malloc instead of g_malloc because readline will use stdlib to resize
+ *
+ * @return The fully created window manager event
+ */
+static WindowManagerEvent *window_manager_event_create() {
+    char *msg = malloc(WM_EVENTS_MSG_SIZE);
+    WindowManagerEvent *event = malloc(sizeof(WindowManagerEvent));
+    event->msg = msg;
+    event->msg_len = 0;
+    event->msg_size = WM_EVENTS_MSG_SIZE;
+    event->debounce_timeout_id = 0;
+
+    return event;
+}
+
+/**
+ * Poll for socket events
+ *
+ * @param user_data In this case the events instance
+ * @return TRUE if no error else FALSE
+ */
+static gboolean window_manager_events_poll(gpointer user_data) {
+    WwtWindowManager *wm = user_data;
+    WindowManagerEventsPollData *poll_data = wm->poll_data;
+    int ret = poll(&poll_data->poll_fd, 1, 0);
+
+    if (ret < 0) {
+        return FALSE;
+    }
+
+    if (poll_data->poll_fd.revents & (POLLERR | POLLHUP)) {
+        return FALSE;
+    }
+
+    if (poll_data->poll_fd.revents & POLLIN) {
+        while (wm->spec->events_reader(poll_data->socket_file, wm->event)) {
+            wm->spec->events_callback(wm->event, wm->app);
+        }
+    }
+
+    return TRUE;
+}
+
+/**
+ * Destroys the window manager events
+ *
+ * Again use free instead of g_free because we use stdlib to create so readline
+ * can correctly resize the msg
+ *
+ * @param event
+ */
+static void window_manager_event_destroy(WindowManagerEvent *event) {
+    free(event->msg);
+    free(event);
+}
+
+/**
+ * Create the poll data for window manager events
+ *
+ * @param self
+ */
+static WindowManagerEventsPollData *window_manager_events_poll_create(
+    WwtWindowManager *self
+) {
+    WindowManagerEventsPollData *poll_data =
+        g_malloc0(sizeof(WindowManagerEventsPollData));
+
+    int fd = self->spec->events_constructor();
+    poll_data->poll_fd.fd = fd;
+    poll_data->poll_fd.events = POLLIN;
+    poll_data->socket_file = fdopen(fd, "r");
+
+    if (!poll_data->socket_file) {
+        g_free(poll_data);
+        perror("fdopen");
+        close(fd);
+
+        return NULL;
+    }
+
+    poll_data->timeout_id = g_timeout_add(
+        WM_EVENTS_POLLING_TIMEOUT,
+        window_manager_events_poll,
+        self
+    );
+
+    set_non_block(poll_data->poll_fd.fd);
+
+    return poll_data;
+}
+
+/**
+ * Destroys the poll data for window manager events
+ *
+ * @param poll_data The poll data struct
+ * @param events_destructor The events destructor from the window manager spec
+ */
+static void window_manager_events_poll_destroy(
+    WindowManagerEventsPollData *poll_data,
+    WindowManagerEventsDestructor events_destructor
+) {
+    events_destructor(poll_data->poll_fd.fd, poll_data->socket_file);
+    g_source_remove(poll_data->timeout_id);
+    g_free(poll_data);
 }
 
 /**
@@ -108,14 +234,13 @@ static void dispose(GObject *obj) {
 static void finalize(GObject *obj) {
     WwtWindowManager *self = WWT_WINDOW_MANAGER(obj);
 
-    window_manager_events_unsubscribe(
-        self->events,
-        self->events_subscription_id
-    );
+    if (self->event) {
+        window_manager_event_destroy(self->event);
+    }
 
-    if (self->events && self->spec) {
-        window_manager_events_destroy(
-            self->events,
+    if (self->poll_data) {
+        window_manager_events_poll_destroy(
+            self->poll_data,
             self->spec->events_destructor
         );
     }
@@ -162,23 +287,10 @@ WwtWindowManager *window_manager_new(WwtApp *app, WindowManagerId wm_id) {
         return NULL;
     }
 
-    self->events = window_manager_events_create(
-        self->spec->events_constructor,
-        self->spec->events_reader
-    );
+    self->event = window_manager_event_create();
+    self->poll_data = window_manager_events_poll_create(self);
 
-    if (!self->events) {
-        g_object_unref(self);
-        return NULL;
-    }
-
-    self->events_subscription_id = window_manager_events_subscribe(
-        self->events,
-        self->spec->events_callback,
-        app
-    );
-
-    if (self->events_subscription_id < 0) {
+    if (!self->poll_data) {
         g_object_unref(self);
         return NULL;
     }
