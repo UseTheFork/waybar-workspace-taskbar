@@ -197,7 +197,6 @@ static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
     }
 
     gint64 focused_ws_id = -1;
-    const gchar *focused_ws_name = NULL;
 
     guint ws_len = json_array_get_length(workspaces);
     for (guint i = 0; i < ws_len; i++) {
@@ -225,11 +224,6 @@ static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
 
         focused_ws_id = json_object_get_int_member(ws, "id");
 
-        JsonNode *name_node = json_object_get_member(ws, "name");
-        if (name_node && !json_node_is_null(name_node)) {
-            focused_ws_name = json_node_get_string(name_node);
-        }
-
         break;
     }
 
@@ -239,7 +233,6 @@ static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
         return FALSE;
     }
 
-    // Step 2: get windows, filter by workspace, sort by position
     char *win_json = cmd_output("niri msg -j windows");
     if (!win_json) {
         g_object_unref(ws_parser);
