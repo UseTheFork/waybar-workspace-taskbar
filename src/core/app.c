@@ -8,8 +8,9 @@ struct _WwtApp {
     GObject parent;
 
     wbcffi_module *waybar_module;
-    WwtConfig *config;
+    GtkContainer *root_widget;
     WwtTaskbar *taskbar;
+    WwtConfig *config;
     WwtWindowManager *window_manager;
 };
 
@@ -53,8 +54,8 @@ WwtWindowManager *wwt_app_get_window_manager(WwtApp *self) {
 static void dispose(GObject *obj) {
     WwtApp *self = WWT_APP(obj);
 
-    g_clear_object(&self->config);
     g_clear_object(&self->window_manager);
+    g_clear_object(&self->config);
 
     G_OBJECT_CLASS(wwt_app_parent_class)->dispose(obj);
 }
@@ -124,9 +125,12 @@ WwtApp *wwt_app_new(
     }
 
     // Add a container for displaying the tabs
-    GtkContainer *root = init_info->get_root_widget(init_info->obj);
+    self->root_widget = init_info->get_root_widget(init_info->obj);
     self->taskbar = wwt_taskbar_new(self);
-    gtk_container_add(GTK_CONTAINER(root), GTK_WIDGET(self->taskbar));
+    gtk_container_add(
+        GTK_CONTAINER(self->root_widget),
+        GTK_WIDGET(self->taskbar)
+    );
 
     // Populate taskbar with tabs
     wwt_taskbar_generate_tabs(self->taskbar);

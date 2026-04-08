@@ -220,8 +220,6 @@ static void dispose(GObject *obj) {
  * @param obj The obj struct
  */
 static void finalize(GObject *obj) {
-    WwtConfig *self = WWT_CONFIG(obj);
-
     G_OBJECT_CLASS(wwt_config_parent_class)->finalize(obj);
 }
 

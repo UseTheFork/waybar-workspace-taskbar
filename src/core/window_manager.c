@@ -131,6 +131,10 @@ static gboolean window_manager_events_poll(gpointer user_data) {
  * @param event
  */
 static void window_manager_event_destroy(WindowManagerEvent *event) {
+    if (event->debounce_timeout_id) {
+        g_source_remove(event->debounce_timeout_id);
+    }
+
     free(event->msg);
     free(event);
 }
@@ -223,15 +227,6 @@ static gboolean wwt_window_manager_init_spec(
  * @param obj The object struct
  */
 static void dispose(GObject *obj) {
-    G_OBJECT_CLASS(wwt_window_manager_parent_class)->dispose(obj);
-}
-
-/**
- * Handles object finalization
- *
- * @param obj The app struct
- */
-static void finalize(GObject *obj) {
     WwtWindowManager *self = WWT_WINDOW_MANAGER(obj);
 
     if (self->event) {
@@ -244,6 +239,17 @@ static void finalize(GObject *obj) {
             self->spec->events_destructor
         );
     }
+
+    G_OBJECT_CLASS(wwt_window_manager_parent_class)->dispose(obj);
+}
+
+/**
+ * Handles object finalization
+ *
+ * @param obj The app struct
+ */
+static void finalize(GObject *obj) {
+    WwtWindowManager *self = WWT_WINDOW_MANAGER(obj);
 
     g_free(self->spec);
 
