@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/app.h"
+#include "core/window_manager_data.h"
 #include <gtk/gtk.h>
 
 G_BEGIN_DECLS;
@@ -10,6 +11,6 @@ G_BEGIN_DECLS;
 G_DECLARE_FINAL_TYPE(WwtTaskbar, wwt_taskbar, WWT, TASKBAR, GtkBox)
 
 WwtTaskbar *wwt_taskbar_new(WwtApp *app);
-gboolean wwt_taskbar_generate_tabs(WwtTaskbar *self);
+void wwt_taskbar_populate_tabs(WindowManagerData *wm_data, gpointer user_data);
 
 G_END_DECLS;

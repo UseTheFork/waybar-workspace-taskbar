@@ -114,7 +114,7 @@ WwtApp *wwt_app_new(
         return NULL;
     }
 
-    self->window_manager = window_manager_new(self, wm_id);
+    self->window_manager = window_manager_default(self, wm_id);
     if (!self->window_manager) {
         g_object_unref(self);
         g_critical(
@@ -133,7 +133,12 @@ WwtApp *wwt_app_new(
     );
 
     // Populate taskbar with tabs
-    wwt_taskbar_generate_tabs(self->taskbar);
+    WindowManagerGetData get_data =
+        wwt_window_manager_get_get_data(self->window_manager);
+
+    WindowManagerData *wm_data = get_data();
+    wwt_taskbar_populate_tabs(wm_data, self->taskbar);
+    window_manager_data_destroy(wm_data);
 
     return self;
 }

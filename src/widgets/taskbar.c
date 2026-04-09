@@ -2,13 +2,14 @@
 #include "core/app.h"
 #include "core/config.h"
 #include "core/window_manager.h"
+#include "core/window_manager_data.h"
 #include "tab.h"
-#include "window_managers/common.h"
 
 struct _WwtTaskbar {
     GtkBox parent_instance;
 
     WwtApp *app;
+    int events_subscription_id;
 };
 
 G_DEFINE_TYPE(WwtTaskbar, wwt_taskbar, GTK_TYPE_BOX);
@@ -78,24 +79,23 @@ static int get_focused_index(GPtrArray *wins) {
  * Generates the tabs
  *
  * @param bar The tabs instance
- * @return TRUE if tabs were successfully genenerated else FALSE
  */
-gboolean wwt_taskbar_generate_tabs(WwtTaskbar *self) {
-    WwtWindowManager *wm = wwt_app_get_window_manager(self->app);
+void wwt_taskbar_populate_tabs(WindowManagerData *wm_data, gpointer user_data) {
+    WwtTaskbar *self = user_data;
     WwtConfig *config = wwt_app_get_config(self->app);
     int max_tabs = wwt_config_get_max_tabs(config);
+    const gchar *output = wwt_config_get_output(config);
 
-    WindowManagerGetWindows get_windows =
-        wwt_window_manager_get_get_windows(wm);
+    GPtrArray *wins;
 
-    GPtrArray *wins =
-        g_ptr_array_new_with_free_func((GDestroyNotify)wm_win_destroy);
+    if (output) {
+        wins = window_manager_data_get_windows_on_output(wm_data, output);
+    } else {
+        wins = window_manager_data_get_windows_on_focused(wm_data);
+    }
 
-    gboolean fetched = get_windows(self->app, wins);
-
-    if (!fetched) {
-        g_ptr_array_free(wins, TRUE);
-        return FALSE;
+    if (!wins) {
+        return;
     }
 
     int focused_index = get_focused_index(wins);
@@ -170,9 +170,7 @@ gboolean wwt_taskbar_generate_tabs(WwtTaskbar *self) {
         overflow_end
     );
 
-    g_ptr_array_free(wins, TRUE);
-
-    return TRUE;
+    return;
 }
 
 /**
@@ -190,6 +188,8 @@ static void wwt_taskbar_init(WwtTaskbar *self) {
  *
  */
 static void wwt_taskbar_dispose(GObject *obj) {
+    WwtTaskbar *self = WWT_TASKBAR(obj);
+
     G_OBJECT_CLASS(wwt_taskbar_parent_class)->dispose(obj);
 }
 
@@ -229,11 +229,14 @@ WwtTaskbar *wwt_taskbar_new(WwtApp *app) {
         NULL
     );
 
+    WwtWindowManager *wm = wwt_app_get_window_manager(app);
     GtkStyleContext *ctx = gtk_widget_get_style_context(GTK_WIDGET(self));
 
     gtk_style_context_add_class(ctx, TASKBAR_CLASS_NAME);
 
     self->app = app;
+
+    wwt_window_manager_events_subscribe(wm, wwt_taskbar_populate_tabs, self);
 
     return self;
 }

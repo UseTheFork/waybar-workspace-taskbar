@@ -1,12 +1,20 @@
 #include "window_manager.h"
-#include "window_managers/hyprland.h"
+// #include "window_managers/hyprland.h"
+// #include "window_managers/sway.h"
 #include "window_managers/niri.h"
-#include "window_managers/sway.h"
 #include <fcntl.h>
 #include <sys/poll.h>
 
 #define WM_EVENTS_POLLING_TIMEOUT 20
+#define WM_EVENTS_DEBOUNCE_TIMEOUT 20
 #define WM_EVENTS_MSG_SIZE 4096
+#define WM_EVENTS_MAX_CALlBACKS 8
+
+enum WindowManagerInitStatus {
+    WM_INIT_STATUS_PENDING,
+    WM_INIT_STATUS_FAILED,
+    WM_INIT_STATUS_SUCCESS
+};
 
 typedef struct {
     int timeout_id;
@@ -18,25 +26,21 @@ typedef struct {
 struct _WwtWindowManager {
     GObject parent;
 
-    WwtApp *app;
     WindowManagerId id;
     WindowManagerSpec *spec;
     WindowManagerEvent *event;
     WindowManagerEventsPollData *poll_data;
+    WindowManagerEventsSubscription *subs[WM_EVENTS_MAX_CALlBACKS];
+    int subs_count;
 };
 
 G_DEFINE_TYPE(WwtWindowManager, wwt_window_manager, G_TYPE_OBJECT);
 
-/**
- * Gets the generate tabs function from the window manager spec
- *
- * @param self The window manager struct
- * @return The get_windows function from window manager spec
- */
-WindowManagerGetWindows wwt_window_manager_get_get_windows(
-    WwtWindowManager *self
-) {
-    return self->spec->get_windows;
+static WwtWindowManager *instance = NULL;
+static int init_status = WM_INIT_STATUS_PENDING;
+
+WindowManagerGetData wwt_window_manager_get_get_data(WwtWindowManager *self) {
+    return self->spec->get_data;
 }
 
 /**
@@ -95,14 +99,35 @@ static WindowManagerEvent *window_manager_event_create() {
 }
 
 /**
+ * Function to call after debounce timeout success
+ *
+ * @param user_data The data to be passed (self) in this case
+ */
+static gboolean events_debounce_source_func(gpointer user_data) {
+    WwtWindowManager *self = user_data;
+    WindowManagerData *wm_data = self->spec->get_data();
+
+    for (int i = 0; i < WM_EVENTS_MAX_CALlBACKS; ++i) {
+        if (self->subs[i]) {
+            self->subs[i]->cb(wm_data, self->subs[i]->user_data);
+        }
+    }
+
+    window_manager_data_destroy(wm_data);
+    self->event->debounce_timeout_id = 0;
+
+    return G_SOURCE_REMOVE;
+}
+
+/**
  * Poll for socket events
  *
  * @param user_data In this case the events instance
  * @return TRUE if no error else FALSE
  */
 static gboolean window_manager_events_poll(gpointer user_data) {
-    WwtWindowManager *wm = user_data;
-    WindowManagerEventsPollData *poll_data = wm->poll_data;
+    WwtWindowManager *self = user_data;
+    WindowManagerEventsPollData *poll_data = self->poll_data;
     int ret = poll(&poll_data->poll_fd, 1, 0);
 
     if (ret < 0) {
@@ -114,8 +139,21 @@ static gboolean window_manager_events_poll(gpointer user_data) {
     }
 
     if (poll_data->poll_fd.revents & POLLIN) {
-        while (wm->spec->events_reader(poll_data->socket_file, wm->event)) {
-            wm->spec->events_callback(wm->event, wm->app);
+        while (self->spec->events_reader(poll_data->socket_file, self->event)) {
+            if (!self->spec->events_validator(self->event)) {
+                continue;
+            }
+
+            if (self->event->debounce_timeout_id != 0) {
+                g_source_remove(self->event->debounce_timeout_id);
+                self->event->debounce_timeout_id = 0;
+            }
+
+            self->event->debounce_timeout_id = g_timeout_add(
+                WM_EVENTS_DEBOUNCE_TIMEOUT,
+                events_debounce_source_func,
+                self
+            );
         }
     }
 
@@ -190,6 +228,68 @@ static void window_manager_events_poll_destroy(
 }
 
 /**
+ * Subscribe to the window manager events
+ *
+ * @param events The events instance
+ * @param cb The function to call on an event
+ * @param user_data Any data to pass to the callback
+ * @return The id/pos of the subscription in the subscription array -1 if
+ * failure
+ */
+int wwt_window_manager_events_subscribe(
+    WwtWindowManager *self,
+    WindowManagerEventsSubscriptionCallback cb,
+    gpointer user_data
+) {
+    for (int i = 0; i < WM_EVENTS_MAX_CALlBACKS; ++i) {
+        if (!self->subs[i]) {
+            WindowManagerEventsSubscription *sub =
+                g_malloc(sizeof(WindowManagerEventsSubscription));
+
+            sub->cb = cb;
+            sub->user_data = user_data;
+            self->subs[i] = sub;
+
+            self->subs_count++;
+            return i;
+        }
+    }
+    return -1;
+}
+
+/**
+ * Unsubscribe to the window manager events
+ *
+ * @param events The events instance
+ * @param id This is the id passed on subscribing.
+ * @return TRUE if successfully unsubscribed else FALSE
+ */
+gboolean wwt_window_manager_events_unsubscribe(WwtWindowManager *self, int id) {
+    if (id < 0 || id >= WM_EVENTS_MAX_CALlBACKS) {
+        return FALSE;
+    }
+
+    if (self->subs[id]) {
+        g_free(self->subs[id]);
+        self->subs[id] = NULL;
+        self->subs_count--;
+    }
+
+    return TRUE;
+}
+
+/**
+ * Unsubscribe all subscribers
+ *
+ * @param self
+ */
+void window_manager_events_unsubscribe_all(WwtWindowManager *self) {
+    for (int i = 0; i < WM_EVENTS_MAX_CALlBACKS; ++i) {
+        wwt_window_manager_events_unsubscribe(self, i);
+    }
+}
+
+/**
  * Initiaizes the window manager spec
  *
  * @param self
@@ -206,17 +306,17 @@ static gboolean wwt_window_manager_init_spec(
         return TRUE;
     }
 
-    if (wm_id == WM_ID_SWAY) {
-        self->spec = window_manager_spec_create_sway();
-
-        return TRUE;
-    }
-
-    if (wm_id == WM_ID_HYPRLAND) {
-        self->spec = window_manager_spec_create_hyprland();
-
-        return TRUE;
-    }
+    // if (wm_id == WM_ID_SWAY) {
+    //     self->spec = window_manager_spec_create_sway();
+    //
+    //     return TRUE;
+    // }
+    //
+    // if (wm_id == WM_ID_HYPRLAND) {
+    //     self->spec = window_manager_spec_create_hyprland();
+    //
+    //     return TRUE;
+    // }
 
     return FALSE;
 }
@@ -238,6 +338,10 @@ static void dispose(GObject *obj) {
             self->poll_data,
             self->spec->events_destructor
         );
+    }
+
+    if (self->subs_count > 0) {
+        window_manager_events_unsubscribe_all(self);
     }
 
     G_OBJECT_CLASS(wwt_window_manager_parent_class)->dispose(obj);
@@ -275,20 +379,28 @@ static void wwt_window_manager_class_init(WwtWindowManagerClass *klass) {
 }
 
 /**
- * Create the window manager
+ * Gets or creates the window manager instance
  *
  * @param app The app instance
  * @param wm_id The name of window manager
  * @return The fully created window manager instance
  */
-WwtWindowManager *window_manager_new(WwtApp *app, WindowManagerId wm_id) {
+WwtWindowManager *window_manager_default(WwtApp *app, WindowManagerId wm_id) {
+    if (init_status == WM_INIT_STATUS_FAILED) {
+        return NULL;
+    }
+
+    if (instance && init_status == WM_INIT_STATUS_SUCCESS) {
+        return instance;
+    }
+
     WwtWindowManager *self = g_object_new(WWT_WINDOW_MANAGER_TYPE, NULL);
 
-    self->app = app;
     self->id = wm_id;
     gboolean spec_initialized = wwt_window_manager_init_spec(self, wm_id);
 
     if (!spec_initialized) {
+        init_status = WM_INIT_STATUS_FAILED;
         g_object_unref(self);
         return NULL;
     }
@@ -297,9 +409,11 @@ WwtWindowManager *window_manager_new(WwtApp *app, WindowManagerId wm_id) {
     self->poll_data = window_manager_events_poll_create(self);
 
     if (!self->poll_data) {
+        init_status = WM_INIT_STATUS_FAILED;
         g_object_unref(self);
         return NULL;
     }
 
+    init_status = WM_INIT_STATUS_SUCCESS;
     return self;
 }

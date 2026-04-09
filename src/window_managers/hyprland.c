@@ -4,7 +4,6 @@
 #include "core/config.h"
 #include "core/utils.h"
 #include "glib.h"
-#include "widgets/taskbar.h"
 #include <stdio.h>
 
 /**
@@ -65,59 +64,21 @@ static gboolean events_reader(FILE *socket_file, WindowManagerEvent *event) {
 }
 
 /**
- * Fires after the debounce period. This is where all the actual work is done
+ * Checks if the event is an appropriate event to fire on
  *
- * @param user_data any data that was passed in when subscribe was called. app
- * in this instance
- * @return FALSE if the source should be removed. G_SOURCE_CONTINUE and
- * G_SOURCE_REMOVE are more memorable names for the return value.
+ * @param event The event to check
  */
-static gboolean events_debounce_callback(gpointer user_data) {
-    DebounceCallbackData *callback_data = user_data;
-    WwtApp *app = callback_data->app;
-    WindowManagerEvent *event = callback_data->event;
-    WwtTaskbar *taskbar = wwt_app_get_taskbar(app);
-
-    wwt_taskbar_generate_tabs(taskbar);
-
-    event->debounce_timeout_id = 0;
-    return G_SOURCE_REMOVE;
-}
-
-/**
- * Callback that fires when the full event message is ready
- *
- * @param event The event instance
- * @param user_data any data that was passed in when subscribe was called. app
- * in this instance
- */
-static void events_callback(WindowManagerEvent *event, WwtApp *app) {
+static gboolean events_validator(WindowManagerEvent *event) {
     if (strncmp(event->msg, "windowtitle>>", strlen("windowtitle>>")) == 0 ||
         strncmp(event->msg, "workspace>>", strlen("workspace>>")) == 0 ||
         strncmp(event->msg, "activewindow>>", strlen("activewindow>>")) == 0 ||
         strncmp(event->msg, "closewindow>>", strlen("closewindow>>")) == 0 ||
         strncmp(event->msg, "openwindow>>", strlen("openwindow>>")) == 0 ||
         strncmp(event->msg, "activewindow>>", strlen("activewindow>>")) == 0) {
-
-        if (event->debounce_timeout_id != 0) {
-            g_source_remove(event->debounce_timeout_id);
-            event->debounce_timeout_id = 0;
-        }
-
-        DebounceCallbackData *callback_data =
-            g_malloc(sizeof(DebounceCallbackData));
-
-        callback_data->event = event;
-        callback_data->app = app;
-
-        event->debounce_timeout_id = g_timeout_add_full(
-            G_PRIORITY_DEFAULT,
-            WM_CALLBACK_DEBOUNCE_TIMEOUT,
-            events_debounce_callback,
-            callback_data,
-            g_free
-        );
+        return TRUE;
     }
+
+    return FALSE;
 }
 
 /**
@@ -273,7 +234,7 @@ static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
         gint64 x = json_array_get_int_element(at, 0);
         gint64 y = json_array_get_int_element(at, 1);
 
-        WindowManagerWindow *win = wm_win_create(
+        WindowManagerWindow *win = wm_window_create(
             address,
             title,
             class,
@@ -318,7 +279,7 @@ WindowManagerSpec *window_manager_spec_create_hyprland() {
     spec->events_constructor = events_constructor;
     spec->events_destructor = events_destructor;
     spec->events_reader = events_reader;
-    spec->events_callback = events_callback;
+    spec->events_validator = events_validator;
     spec->get_windows = get_windows;
     spec->window_focus = window_focus;
     spec->window_close = window_close;

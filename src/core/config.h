@@ -1,3 +1,5 @@
+#pragma once
+
 #include "wbcffi.h"
 #include "window_manager.h"
 #include <gtk/gtk.h>

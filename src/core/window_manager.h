@@ -1,5 +1,6 @@
 #pragma once
 
+#include "window_manager_data.h"
 #include <gtk/gtk.h>
 
 G_BEGIN_DECLS;
@@ -17,7 +18,7 @@ G_DECLARE_FINAL_TYPE(
 typedef struct _WwtApp WwtApp;
 typedef struct _WwtWindowManager WwtWindowManager;
 typedef struct _WindowManagerEvents WindowManagerEvents;
-typedef struct _WindowManagerEventsSubscription WindowManagerEventsSubscription;
+typedef struct _WwtWindowManagerWorkspaces WwtWindowManagerWorkspaces;
 
 typedef enum {
     WM_ID_UNSUPPORTED,
@@ -41,37 +42,54 @@ typedef struct {
 
 typedef int (*WindowManagerEventsConstructor)();
 typedef void (*WindowManagerEventsDestructor)(int fd, FILE *socket_file);
+typedef gboolean (*WindowManagerEventsValidator)(WindowManagerEvent *event);
 typedef gboolean (*WindowManagerEventsReader)(
     FILE *socket_file,
     WindowManagerEvent *event
 );
-typedef void (*WindowManagerEventsCallback)(
-    WindowManagerEvent *event,
-    WwtApp *app
-);
 typedef gboolean (*WindowManagerClickHandler)(const char *id);
-typedef gboolean (*WindowManagerGetWindows)(WwtApp *app, GPtrArray *wins);
+typedef WindowManagerData *(*WindowManagerGetData)();
+
+typedef void (*WindowManagerEventsSubscriptionCallback)(
+    WindowManagerData *wm_data,
+    gpointer user_data
+);
+
+typedef struct WindowManagerEventsSubscription {
+    WindowManagerEventsSubscriptionCallback cb;
+    gpointer user_data;
+} WindowManagerEventsSubscription;
 
 typedef struct WindowManagerSpec {
     WindowManagerEventsConstructor events_constructor;
     WindowManagerEventsDestructor events_destructor;
     WindowManagerEventsReader events_reader;
-    WindowManagerEventsCallback events_callback;
-    WindowManagerGetWindows get_windows;
+    WindowManagerEventsValidator events_validator;
+    WindowManagerGetData get_data;
     WindowManagerClickHandler window_focus;
     WindowManagerClickHandler window_close;
     WindowManagerClickHandler window_float;
 } WindowManagerSpec;
 
-WwtWindowManager *window_manager_new(WwtApp *app, WindowManagerId id);
+WwtWindowManager *window_manager_default(WwtApp *app, WindowManagerId id);
 
 WindowManagerClickHandler wwt_window_manager_get_click_handler(
     WwtWindowManager *self,
     WindowManagerClickHandlerType type
 );
 
-WindowManagerGetWindows wwt_window_manager_get_get_windows(
+WwtWindowManagerWorkspaces *wwt_window_manager_get_workspaces(
     WwtWindowManager *self
 );
+
+WindowManagerGetData wwt_window_manager_get_get_data(WwtWindowManager *self);
+
+int wwt_window_manager_events_subscribe(
+    WwtWindowManager *self,
+    WindowManagerEventsSubscriptionCallback cb,
+    gpointer user_data
+);
+
+gboolean wwt_window_manager_events_unsubscribe(WwtWindowManager *self, int id);
 
 G_END_DECLS;

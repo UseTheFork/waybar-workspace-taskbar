@@ -118,19 +118,21 @@ static gboolean on_button_press(
     WindowManagerClickHandler window_float =
         wwt_window_manager_get_click_handler(wm, WM_CLICK_FLOAT);
 
+    // Left click
     if (event->button == 1) {
         window_focus(tab->win_id);
         return TRUE;
     }
 
+    // Middle click
     if (event->button == 2) {
         window_float(tab->win_id);
         return TRUE; // stop propagation
     }
 
+    // Right click
     if (event->button == 3) {
         window_close(tab->win_id);
-        // handle right click
         return TRUE;
     }
 

@@ -1,9 +1,8 @@
 #include "niri.h"
 #include "common.h"
-#include "core/config.h"
 #include "core/utils.h"
+#include "core/window_manager_data.h"
 #include "glib.h"
-#include "widgets/taskbar.h"
 #include <stdio.h>
 
 /**
@@ -56,39 +55,17 @@ static gboolean events_reader(FILE *socket_file, WindowManagerEvent *event) {
 }
 
 /**
- * Fires after the debounce period. This is where all the actual work is done
+ * Checks if the event is an appropriate event to fire on
  *
- * @param user_data any data that was passed in when subscribe was called. app
- * in this instance
- * @return FALSE if the source should be removed. G_SOURCE_CONTINUE and
- * G_SOURCE_REMOVE are more memorable names for the return value.
+ * @param event The event to check
  */
-static gboolean events_debounce_callback(gpointer user_data) {
-    DebounceCallbackData *callback_data = user_data;
-    WwtApp *app = callback_data->app;
-    WindowManagerEvent *event = callback_data->event;
-    WwtTaskbar *taskbar = wwt_app_get_taskbar(app);
-
-    wwt_taskbar_generate_tabs(taskbar);
-
-    event->debounce_timeout_id = 0;
-
-    return G_SOURCE_REMOVE;
-}
-
-/**
- * Callback that fires when the full event message is ready
- *
- * @param event The event instance
- * @param user_data any data that was passed in when subscribe was called. app
- * in this instance
- */
-static void events_callback(WindowManagerEvent *event, WwtApp *app) {
+static gboolean events_validator(WindowManagerEvent *event) {
     JsonParser *parser = create_json_parser(event->msg);
     JsonNode *root = json_parser_get_root(parser);
     JsonObject *root_obj = json_node_get_object(root);
 
     if (json_object_has_member(root_obj, "WindowOpenedOrChanged") ||
+        json_object_has_member(root_obj, "WindowClosed") ||
         json_object_has_member(root_obj, "WorkspacesChanged") ||
         json_object_has_member(root_obj, "WindowFocusChanged") ||
         json_object_has_member(root_obj, "WorkspaceActivated") ||
@@ -96,27 +73,12 @@ static void events_callback(WindowManagerEvent *event, WwtApp *app) {
         json_object_has_member(root_obj, "WorkspaceActiveWindowChanged") ||
         json_object_has_member(root_obj, "OverviewOpenedOrClosed")) {
 
-        if (event->debounce_timeout_id != 0) {
-            g_source_remove(event->debounce_timeout_id);
-            event->debounce_timeout_id = 0;
-        }
-
-        DebounceCallbackData *callback_data =
-            g_malloc(sizeof(DebounceCallbackData));
-
-        callback_data->event = event;
-        callback_data->app = app;
-
-        event->debounce_timeout_id = g_timeout_add_full(
-            G_PRIORITY_DEFAULT,
-            WM_CALLBACK_DEBOUNCE_TIMEOUT,
-            events_debounce_callback,
-            callback_data,
-            g_free
-        );
+        g_object_unref(parser);
+        return TRUE;
     }
 
     g_object_unref(parser);
+    return FALSE;
 }
 
 /**
@@ -160,7 +122,10 @@ static gboolean window_float(const char *id) {
  * @param prev The previous window
  * @return < 0 if should swap
  */
-static int should_swap(WindowManagerWindow *cur, WindowManagerWindow *prev) {
+static int should_swap(gconstpointer a, gconstpointer b) {
+    const WindowManagerWindow *cur = *(const WindowManagerWindow **)a;
+    const WindowManagerWindow *prev = *(const WindowManagerWindow **)b;
+
     if (cur->x != prev->x) {
         return cur->x - prev->x;
     }
@@ -168,15 +133,14 @@ static int should_swap(WindowManagerWindow *cur, WindowManagerWindow *prev) {
 }
 
 /**
- * Gets the windows information from the window manager
+ * Gets the window and workspace information from the window manager
  *
  * @param app The app instance
  * @param wins An empty array to populate with the window information
  * @return TRUE if successfully fetched windows else FALSE
  */
-static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
-    WwtConfig *config = wwt_app_get_config(app);
-    const char *config_output = wwt_config_get_output(config);
+static WindowManagerData *get_data() {
+    WindowManagerData *wm_data = window_manager_data_create();
 
     char *ws_json = cmd_output("niri msg -j workspaces");
     if (!ws_json)
@@ -196,41 +160,25 @@ static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
         return FALSE;
     }
 
-    gint64 focused_ws_id = -1;
-
     guint ws_len = json_array_get_length(workspaces);
     for (guint i = 0; i < ws_len; i++) {
         JsonObject *ws = json_array_get_object_element(workspaces, i);
+        gboolean is_active = json_object_get_boolean_member(ws, "is_active");
 
-        const gchar *output = json_object_get_string_member(ws, "output");
-
-        if (config_output && *config_output) {
-            // Config output set: find the active (is_active) workspace on that
-            // monitor
-            if (!output || strcmp(output, config_output) != 0)
-                continue;
-
-            gboolean is_active =
-                json_object_get_boolean_member(ws, "is_active");
-            if (!is_active)
-                continue;
-        } else {
-            // No config output: find the globally focused workspace
-            gboolean is_focused =
-                json_object_get_boolean_member(ws, "is_focused");
-            if (!is_focused)
-                continue;
+        if (!is_active) {
+            continue;
         }
 
-        focused_ws_id = json_object_get_int_member(ws, "id");
+        const gchar *output = json_object_get_string_member(ws, "output");
+        gboolean is_focused = json_object_get_boolean_member(ws, "is_focused");
+        int ws_id = json_object_get_int_member(ws, "id");
 
-        break;
-    }
-
-    if (focused_ws_id == -1) {
-        g_object_unref(ws_parser);
-        g_free(ws_json);
-        return FALSE;
+        window_manager_data_workspace_create(
+            wm_data,
+            ws_id,
+            is_focused,
+            output
+        );
     }
 
     char *win_json = cmd_output("niri msg -j windows");
@@ -262,12 +210,8 @@ static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
     for (guint i = 0; i < win_len; i++) {
         JsonObject *win = json_array_get_object_element(windows, i);
 
-        gint64 ws_id = json_object_get_int_member(win, "workspace_id");
-        if (ws_id != focused_ws_id) {
-            continue;
-        }
-
         gint64 id = json_object_get_int_member(win, "id");
+        gint64 ws_id = json_object_get_int_member(win, "workspace_id");
         const gchar *title = json_object_get_string_member(win, "title");
         const gchar *app_id = json_object_get_string_member(win, "app_id");
         gboolean is_focused = json_object_get_boolean_member(win, "is_focused");
@@ -293,31 +237,26 @@ static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
             }
         }
 
-        WindowManagerWindow *wmwin =
-            wm_win_create(id_str, title, app_id, (int)is_focused, x, y);
-
-        g_ptr_array_add(wins, wmwin);
-
-        gint j = wins->len - 1;
-        while (j > 0) {
-            WindowManagerWindow *cur = g_ptr_array_index(wins, j);
-            WindowManagerWindow *prev = g_ptr_array_index(wins, j - 1);
-
-            if (should_swap(cur, prev) < 0) {
-                g_ptr_array_index(wins, j - 1) = cur;
-                g_ptr_array_index(wins, j) = prev;
-                j--;
-            } else {
-                break;
-            }
-        }
+        window_manager_data_window_create(
+            wm_data,
+            id_str,
+            title,
+            app_id,
+            ws_id,
+            (int)is_focused,
+            x,
+            y
+        );
     }
 
     g_object_unref(win_parser);
     g_object_unref(ws_parser);
     g_free(win_json);
     g_free(ws_json);
-    return TRUE;
+
+    window_manager_data_sort_windows(wm_data, should_swap);
+
+    return wm_data;
 }
 
 /**
@@ -331,8 +270,8 @@ WindowManagerSpec *window_manager_spec_create_niri() {
     spec->events_constructor = events_constructor;
     spec->events_destructor = events_destructor;
     spec->events_reader = events_reader;
-    spec->events_callback = events_callback;
-    spec->get_windows = get_windows;
+    spec->events_validator = events_validator;
+    spec->get_data = get_data;
     spec->window_focus = window_focus;
     spec->window_close = window_close;
     spec->window_float = window_float;
