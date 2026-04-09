@@ -3,6 +3,9 @@
 #include "core/app.h"
 #include "core/config.h"
 #include "core/utils.h"
+#include "core/window_manager_data.h"
+#include "core/window_manager_events.h"
+#include "core/window_manager_spec.h"
 #include "glib.h"
 #include <stdio.h>
 
@@ -112,14 +115,17 @@ static gboolean window_float(const char *id) {
 }
 
 /**
- * Called when insertion sorting the windows. Sort from left to right top to
+ * Called when sorting the windows. Sort from left to right top to
  * bottom
  *
  * @param cur The current window
  * @param prev The previous window
  * @return < 0 if should swap
  */
-static int should_swap(WindowManagerWindow *cur, WindowManagerWindow *prev) {
+static int should_swap(gconstpointer a, gconstpointer b) {
+    const WindowManagerWindow *cur = *(const WindowManagerWindow **)a;
+    const WindowManagerWindow *prev = *(const WindowManagerWindow **)b;
+
     if (cur->x != prev->x) {
         return cur->x - prev->x;
     }
@@ -133,19 +139,22 @@ static int should_swap(WindowManagerWindow *cur, WindowManagerWindow *prev) {
  * @param wins An empty array to populate with the window information
  * @return TRUE if successfully fetched windows else FALSE
  */
-static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
-    WwtConfig *config = wwt_app_get_config(app);
-    const char *config_output = wwt_config_get_output(config);
+static WindowManagerData *data_getter() {
+    WindowManagerData *wm_data = window_manager_data_create();
 
     char *batch_json = cmd_output("hyprctl --batch \"clients; monitors\" -j");
-    if (!batch_json)
-        return FALSE;
+    if (!batch_json) {
+        window_manager_data_destroy(wm_data);
+        return NULL;
+    }
 
     char *split = strstr(batch_json, "\n\n");
     if (!split) {
         g_free(batch_json);
-        return FALSE;
+        window_manager_data_destroy(wm_data);
+        return NULL;
     }
+
     *split = '\0';
     char *clients_json = batch_json;
     char *monitors_json = split + 2;
@@ -153,57 +162,31 @@ static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
     JsonParser *monitors_parser = create_json_parser(monitors_json);
     if (!monitors_parser) {
         g_free(batch_json);
-        return FALSE;
+        window_manager_data_destroy(wm_data);
+        return NULL;
     }
 
     JsonNode *monitors_root = json_parser_get_root(monitors_parser);
     JsonArray *monitors = json_node_get_array(monitors_root);
     guint monitors_len = json_array_get_length(monitors);
 
-    gint64 active_workspace_id = -1;
-    gchar *workspace_name = NULL;
-
     for (guint i = 0; i < monitors_len; i++) {
         JsonObject *monitor = json_array_get_object_element(monitors, i);
         const gchar *name = json_object_get_string_member(monitor, "name");
-
-        if (config_output && *config_output) {
-            if (!name || strcmp(name, config_output) != 0)
-                continue;
-        } else {
-            gboolean focused =
-                json_object_get_boolean_member(monitor, "focused");
-            if (!focused)
-                continue;
-        }
-
+        gboolean focused = json_object_get_boolean_member(monitor, "focused");
         JsonObject *active_ws =
             json_object_get_object_member(monitor, "activeWorkspace");
-        if (active_ws) {
-            gint64 ws_id = json_object_get_int_member(active_ws, "id");
-            const gchar *ws_name =
-                json_object_get_string_member(active_ws, "name");
-            if (ws_id && ws_name) {
-                active_workspace_id = ws_id;
-                workspace_name = g_strdup(ws_name);
-            }
-        }
-        break;
+        gint ws_id = json_object_get_int_member(active_ws, "id");
+
+        window_manager_data_workspace_create(wm_data, ws_id, focused, name);
     }
     g_object_unref(monitors_parser);
 
-    if (active_workspace_id == -1) {
-        g_free(workspace_name);
-        g_free(batch_json);
-        return FALSE;
-    }
-
     JsonParser *clients_parser = create_json_parser(clients_json);
-
     if (!clients_parser) {
-        g_free(workspace_name);
         g_free(batch_json);
-        return FALSE;
+        window_manager_data_destroy(wm_data);
+        return NULL;
     }
 
     JsonNode *clients_root = json_parser_get_root(clients_parser);
@@ -218,54 +201,35 @@ static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
             continue;
         }
 
-        gint64 ws_id = json_object_get_int_member(ws, "id");
-
-        if (ws_id != active_workspace_id) {
-            continue;
-        }
-
         const gchar *title = json_object_get_string_member(client, "title");
         const gchar *class = json_object_get_string_member(client, "class");
         const gchar *address = json_object_get_string_member(client, "address");
         gint64 focusHistoryID =
             json_object_get_int_member(client, "focusHistoryID");
+        gint64 ws_id = json_object_get_int_member(ws, "id");
 
         JsonArray *at = json_object_get_array_member(client, "at");
         gint64 x = json_array_get_int_element(at, 0);
         gint64 y = json_array_get_int_element(at, 1);
 
-        WindowManagerWindow *win = wm_window_create(
+        window_manager_data_window_create(
+            wm_data,
             address,
             title,
             class,
+            ws_id,
             focusHistoryID == 0 ? 1 : 0,
             x,
             y
         );
-
-        g_ptr_array_add(wins, win);
-
-        int j = wins->len - 1;
-        while (j > 0) {
-            WindowManagerWindow *cur = g_ptr_array_index(wins, j);
-            WindowManagerWindow *prev = g_ptr_array_index(wins, j - 1);
-
-            if (should_swap(cur, prev) < 0) {
-                WindowManagerWindow *tmp = prev;
-                g_ptr_array_index(wins, j - 1) = cur;
-                g_ptr_array_index(wins, j) = tmp;
-                j--;
-            } else {
-                break;
-            }
-        }
     }
 
     g_object_unref(clients_parser);
-    g_free(workspace_name);
     g_free(batch_json);
 
-    return TRUE;
+    window_manager_data_sort_windows(wm_data, should_swap);
+
+    return wm_data;
 }
 
 /**
@@ -280,7 +244,7 @@ WindowManagerSpec *window_manager_spec_create_hyprland() {
     spec->events_destructor = events_destructor;
     spec->events_reader = events_reader;
     spec->events_validator = events_validator;
-    spec->get_windows = get_windows;
+    spec->data_getter = data_getter;
     spec->window_focus = window_focus;
     spec->window_close = window_close;
     spec->window_float = window_float;

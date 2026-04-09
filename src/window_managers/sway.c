@@ -1,10 +1,10 @@
 #include "sway.h"
 #include "common.h"
-#include "core/app.h"
-#include "core/config.h"
 #include "core/utils.h"
+#include "core/window_manager_data.h"
+#include "core/window_manager_events.h"
+#include "core/window_manager_spec.h"
 #include "glib.h"
-#include "widgets/taskbar.h"
 #include <stdio.h>
 
 #define SWAY_MAGIC "i3-ipc"
@@ -107,7 +107,8 @@ static gboolean events_validator(WindowManagerEvent *event) {
         const gchar *change = json_object_get_string_member(root_obj, "change");
 
         if (strcmp("title", change) == 0 || strcmp("focus", change) == 0 ||
-            strcmp("new", change) == 0 || strcmp("empty", change) == 0) {
+            strcmp("new", change) == 0 || strcmp("close", change) == 0 ||
+            strcmp("empty", change) == 0 || strcmp("floating", change)) {
 
             g_object_unref(parser);
             return TRUE;
@@ -156,9 +157,9 @@ static gboolean window_float(const char *id) {
  * @param workspace_name The current active workspace name
  */
 static void walk_tree(
-    GPtrArray *wins,
+    WindowManagerData *wm_data,
     JsonObject *node,
-    const char *workspace_name
+    int workspace_id
 ) {
     if (!node) {
         return;
@@ -194,10 +195,16 @@ static void walk_tree(
             y = json_object_get_int_member(window_rect, "y");
         }
 
-        WindowManagerWindow *win =
-            wm_window_create(id_str, name, app_id, focused, x, y);
-
-        g_ptr_array_add(wins, win);
+        window_manager_data_window_create(
+            wm_data,
+            id_str,
+            name,
+            app_id,
+            workspace_id,
+            focused,
+            x,
+            y
+        );
     }
 
     JsonArray *nodes = json_object_get_array_member(node, "nodes");
@@ -206,19 +213,20 @@ static void walk_tree(
         guint nodes_len = json_array_get_length(nodes);
         for (guint i = 0; i < nodes_len; i++) {
             JsonObject *child = json_array_get_object_element(nodes, i);
-            walk_tree(wins, child, workspace_name);
+            walk_tree(wm_data, child, workspace_id);
         }
     }
 
     JsonArray *floating_nodes =
         json_object_get_array_member(node, "floating_nodes");
+
     if (floating_nodes) {
         guint floating_len = json_array_get_length(floating_nodes);
 
         for (guint i = 0; i < floating_len; i++) {
             JsonObject *child =
                 json_array_get_object_element(floating_nodes, i);
-            walk_tree(wins, child, workspace_name);
+            walk_tree(wm_data, child, workspace_id);
         }
     }
 }
@@ -230,18 +238,20 @@ static void walk_tree(
  * @param wins An empty array to populate with the window information
  * @return TRUE if successfully fetched windows else FALSE
  */
-static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
-    WwtConfig *config = wwt_app_get_config(app);
-    const char *config_output = wwt_config_get_output(config);
+static WindowManagerData *data_getter() {
+    WindowManagerData *wm_data = window_manager_data_create();
 
     char *json_str = cmd_output("swaymsg -t get_tree");
-    if (!json_str)
-        return FALSE;
+    if (!json_str) {
+        window_manager_data_destroy(wm_data);
+        return NULL;
+    }
 
     JsonParser *parser = create_json_parser(json_str);
     if (!parser) {
         g_free(json_str);
-        return FALSE;
+        window_manager_data_destroy(wm_data);
+        return NULL;
     }
 
     JsonNode *root = json_parser_get_root(parser);
@@ -250,57 +260,58 @@ static gboolean get_windows(WwtApp *app, GPtrArray *wins) {
     if (!outputs) {
         g_object_unref(parser);
         g_free(json_str);
-        return FALSE;
-    }
-
-    // If no config_output, find the focused output id from root's focus array
-    gint64 focused_output_id = -1;
-    if (!config_output || !*config_output) {
-        JsonArray *focus = json_object_get_array_member(root_obj, "focus");
-        if (focus && json_array_get_length(focus) > 0) {
-            focused_output_id = json_array_get_int_element(focus, 0);
-        }
+        window_manager_data_destroy(wm_data);
+        return NULL;
     }
 
     guint outputs_len = json_array_get_length(outputs);
     for (guint i = 0; i < outputs_len; i++) {
         JsonObject *output = json_array_get_object_element(outputs, i);
-        const gchar *name = json_object_get_string_member(output, "name");
-        if (!name)
-            continue;
 
-        if (config_output && *config_output) {
-            if (strcmp(name, config_output) != 0)
-                continue;
-        } else {
-            gint64 id = json_object_get_int_member(output, "id");
-            if (id != focused_output_id)
-                continue;
+        if (!json_object_has_member(output, "current_workspace")) {
+            continue;
         }
 
         const gchar *current_ws =
             json_object_get_string_member(output, "current_workspace");
-        if (!current_ws)
+
+        const gchar *output_name =
+            json_object_get_string_member(output, "name");
+        if (!output_name) {
             continue;
+        }
 
         JsonArray *nodes = json_object_get_array_member(output, "nodes");
-        if (!nodes)
+        if (!nodes) {
             continue;
+        }
 
         guint nodes_len = json_array_get_length(nodes);
         for (guint j = 0; j < nodes_len; j++) {
             JsonObject *ws = json_array_get_object_element(nodes, j);
             const gchar *ws_name = json_object_get_string_member(ws, "name");
-            if (ws_name && strcmp(ws_name, current_ws) == 0) {
-                walk_tree(wins, ws, ws_name);
+
+            if (ws_name && strcmp(ws_name, current_ws) != 0) {
+                continue;
             }
+
+            gint64 workspace_id = json_object_get_int_member(ws, "id");
+            gboolean focused = json_object_get_boolean_member(ws, "focused");
+
+            window_manager_data_workspace_create(
+                wm_data,
+                workspace_id,
+                focused,
+                output_name
+            );
+
+            walk_tree(wm_data, ws, workspace_id);
         }
-        break;
     }
 
     g_object_unref(parser);
     g_free(json_str);
-    return TRUE;
+    return wm_data;
 }
 
 /**
@@ -315,7 +326,7 @@ WindowManagerSpec *window_manager_spec_create_sway() {
     spec->events_destructor = events_destructor;
     spec->events_reader = events_reader;
     spec->events_validator = events_validator;
-    spec->get_windows = get_windows;
+    spec->data_getter = data_getter;
     spec->window_focus = window_focus;
     spec->window_close = window_close;
     spec->window_float = window_float;

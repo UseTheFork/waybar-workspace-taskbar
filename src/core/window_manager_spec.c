@@ -1,6 +1,8 @@
 #include "window_manager_spec.h"
 #include "core/config.h"
+#include "window_managers/hyprland.h"
 #include "window_managers/niri.h"
+#include "window_managers/sway.h"
 
 /**
  * Gets the events_constructor
@@ -111,17 +113,13 @@ WindowManagerSpec *window_manager_spec_create(WwtApp *app) {
         return window_manager_spec_create_niri();
     }
 
-    // if (wm_id == WM_ID_SWAY) {
-    //     self->spec = window_manager_spec_create_sway();
-    //
-    //     return TRUE;
-    // }
-    //
-    // if (wm_id == WM_ID_HYPRLAND) {
-    //     self->spec = window_manager_spec_create_hyprland();
-    //
-    //     return TRUE;
-    // }
+    if (wm_id == WM_ID_HYPRLAND) {
+        return window_manager_spec_create_hyprland();
+    }
+
+    if (wm_id == WM_ID_SWAY) {
+        return window_manager_spec_create_sway();
+    }
 
     return NULL;
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/window_manager.h"
+#include "core/window_manager_spec.h"
 
 G_BEGIN_DECLS;
 

@@ -78,6 +78,11 @@ static gboolean events_debounce_fn(gpointer user_data) {
 
     WindowManagerData *wm_data = get_data();
 
+    if (!wm_data) {
+        self->event->debounce_timeout_id = 0;
+        return G_SOURCE_REMOVE;
+    }
+
     for (int i = 0; i < WM_EVENTS_MAX_CALlBACKS; ++i) {
         if (self->subs[i]) {
             self->subs[i]->cb(wm_data, self->subs[i]->user_data);

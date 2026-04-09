@@ -118,7 +118,7 @@ static gboolean window_float(const char *id) {
 }
 
 /**
- * Called when insertion sorting the windows. Sort from left to right top to
+ * Called when sorting the windows. Sort from left to right top to
  * bottom
  *
  * @param cur The current window
@@ -146,13 +146,16 @@ static WindowManagerData *data_getter() {
     WindowManagerData *wm_data = window_manager_data_create();
 
     char *ws_json = cmd_output("niri msg -j workspaces");
-    if (!ws_json)
-        return FALSE;
+    if (!ws_json) {
+        window_manager_data_destroy(wm_data);
+        return NULL;
+    }
 
     JsonParser *ws_parser = create_json_parser(ws_json);
     if (!ws_parser) {
         g_free(ws_json);
-        return FALSE;
+        window_manager_data_destroy(wm_data);
+        return NULL;
     }
 
     JsonNode *ws_root = json_parser_get_root(ws_parser);
@@ -160,7 +163,8 @@ static WindowManagerData *data_getter() {
     if (!workspaces) {
         g_object_unref(ws_parser);
         g_free(ws_json);
-        return FALSE;
+        window_manager_data_destroy(wm_data);
+        return NULL;
     }
 
     guint ws_len = json_array_get_length(workspaces);
@@ -188,7 +192,8 @@ static WindowManagerData *data_getter() {
     if (!win_json) {
         g_object_unref(ws_parser);
         g_free(ws_json);
-        return FALSE;
+        window_manager_data_destroy(wm_data);
+        return NULL;
     }
 
     JsonParser *win_parser = create_json_parser(win_json);
@@ -196,7 +201,8 @@ static WindowManagerData *data_getter() {
         g_object_unref(ws_parser);
         g_free(ws_json);
         g_free(win_json);
-        return FALSE;
+        window_manager_data_destroy(wm_data);
+        return NULL;
     }
 
     JsonNode *win_root = json_parser_get_root(win_parser);
@@ -206,7 +212,8 @@ static WindowManagerData *data_getter() {
         g_object_unref(ws_parser);
         g_free(win_json);
         g_free(ws_json);
-        return FALSE;
+        window_manager_data_destroy(wm_data);
+        return NULL;
     }
 
     guint win_len = json_array_get_length(windows);

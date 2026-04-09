@@ -108,7 +108,15 @@ This is fairly simple.
 
 ## Known issues
 
-On Hyprland Monocle layout I've yet to figured out how to properly sort the windows. So windows will appear as they come from hyprland.
+Still trying to figure out how I want to handle sorting when a workspace has floating windows.
+
+Hyprland
+
+- Monocle layout I've yet to figured out how to properly sort the windows. So windows will appear as they come from hyprland.
+
+Sway
+
+- Sorting directly after toggling off float can be wrong until you change focus. Sway either doesn't reparent the window right away or there is a delay.
 
 ## License
 

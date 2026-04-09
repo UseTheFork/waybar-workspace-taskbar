@@ -137,8 +137,10 @@ WwtApp *wwt_app_new(
         window_manager_spec_get_data_getter(spec);
 
     WindowManagerData *wm_data = get_data();
-    wwt_taskbar_populate_tabs(wm_data, self->taskbar);
-    window_manager_data_destroy(wm_data);
+    if (wm_data) {
+        wwt_taskbar_populate_tabs(wm_data, self->taskbar);
+        window_manager_data_destroy(wm_data);
+    }
 
     return self;
 }
