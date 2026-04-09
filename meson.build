@@ -13,6 +13,8 @@ src_files = files(
   'src/core/utils.c',
   'src/core/window_manager.c',
   'src/core/window_manager_data.c',
+  'src/core/window_manager_events.c',
+  'src/core/window_manager_spec.c',
   'src/widgets/tab.c',
   'src/widgets/taskbar.c',
   'src/window_managers/niri.c',

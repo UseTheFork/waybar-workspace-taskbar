@@ -3,6 +3,7 @@
 #include "wbcffi.h"
 #include "widgets/taskbar.h"
 #include "window_manager.h"
+#include "window_manager_spec.h"
 
 struct _WwtApp {
     GObject parent;
@@ -109,8 +110,6 @@ WwtApp *wwt_app_new(
 
     if (wm_id == WM_ID_UNSUPPORTED) {
         g_object_unref(self);
-        g_critical("Waybar Workspace Taskbar: unsupported window_manager");
-
         return NULL;
     }
 
@@ -133,8 +132,9 @@ WwtApp *wwt_app_new(
     );
 
     // Populate taskbar with tabs
-    WindowManagerGetData get_data =
-        wwt_window_manager_get_get_data(self->window_manager);
+    WindowManagerSpec *spec = wwt_window_manager_get_spec(self->window_manager);
+    WindowManagerDataGetter get_data =
+        window_manager_spec_get_data_getter(spec);
 
     WindowManagerData *wm_data = get_data();
     wwt_taskbar_populate_tabs(wm_data, self->taskbar);

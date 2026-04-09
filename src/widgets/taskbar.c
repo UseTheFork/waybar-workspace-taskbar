@@ -3,6 +3,7 @@
 #include "core/config.h"
 #include "core/window_manager.h"
 #include "core/window_manager_data.h"
+#include "core/window_manager_events.h"
 #include "tab.h"
 
 struct _WwtTaskbar {
@@ -188,8 +189,6 @@ static void wwt_taskbar_init(WwtTaskbar *self) {
  *
  */
 static void wwt_taskbar_dispose(GObject *obj) {
-    WwtTaskbar *self = WWT_TASKBAR(obj);
-
     G_OBJECT_CLASS(wwt_taskbar_parent_class)->dispose(obj);
 }
 
@@ -230,13 +229,14 @@ WwtTaskbar *wwt_taskbar_new(WwtApp *app) {
     );
 
     WwtWindowManager *wm = wwt_app_get_window_manager(app);
+    WindowManagerEvents *wm_events = wwt_window_manager_get_events(wm);
     GtkStyleContext *ctx = gtk_widget_get_style_context(GTK_WIDGET(self));
 
     gtk_style_context_add_class(ctx, TASKBAR_CLASS_NAME);
 
     self->app = app;
 
-    wwt_window_manager_events_subscribe(wm, wwt_taskbar_populate_tabs, self);
+    window_manager_events_subscribe(wm_events, wwt_taskbar_populate_tabs, self);
 
     return self;
 }

@@ -2,6 +2,7 @@
 #include "core/app.h"
 #include "core/config.h"
 #include "core/window_manager.h"
+#include "core/window_manager_spec.h"
 #include <gio/gdesktopappinfo.h>
 #include <stdio.h>
 
@@ -110,13 +111,14 @@ static gboolean on_button_press(
 ) {
     WwtTab *tab = WWT_TAB(widget);
     WwtWindowManager *wm = wwt_app_get_window_manager(tab->app);
+    WindowManagerSpec *spec = wwt_window_manager_get_spec(wm);
 
     WindowManagerClickHandler window_focus =
-        wwt_window_manager_get_click_handler(wm, WM_CLICK_FOCUS);
+        window_manager_spec_get_click_handler(spec, WM_CLICK_FOCUS);
     WindowManagerClickHandler window_close =
-        wwt_window_manager_get_click_handler(wm, WM_CLICK_CLOSE);
+        window_manager_spec_get_click_handler(spec, WM_CLICK_CLOSE);
     WindowManagerClickHandler window_float =
-        wwt_window_manager_get_click_handler(wm, WM_CLICK_FLOAT);
+        window_manager_spec_get_click_handler(spec, WM_CLICK_FLOAT);
 
     // Left click
     if (event->button == 1) {

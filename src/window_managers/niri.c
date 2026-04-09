@@ -2,6 +2,8 @@
 #include "common.h"
 #include "core/utils.h"
 #include "core/window_manager_data.h"
+#include "core/window_manager_events.h"
+#include "core/window_manager_spec.h"
 #include "glib.h"
 #include <stdio.h>
 
@@ -66,6 +68,7 @@ static gboolean events_validator(WindowManagerEvent *event) {
 
     if (json_object_has_member(root_obj, "WindowOpenedOrChanged") ||
         json_object_has_member(root_obj, "WindowClosed") ||
+        json_object_has_member(root_obj, "WindowLayoutsChanged") ||
         json_object_has_member(root_obj, "WorkspacesChanged") ||
         json_object_has_member(root_obj, "WindowFocusChanged") ||
         json_object_has_member(root_obj, "WorkspaceActivated") ||
@@ -139,7 +142,7 @@ static int should_swap(gconstpointer a, gconstpointer b) {
  * @param wins An empty array to populate with the window information
  * @return TRUE if successfully fetched windows else FALSE
  */
-static WindowManagerData *get_data() {
+static WindowManagerData *data_getter() {
     WindowManagerData *wm_data = window_manager_data_create();
 
     char *ws_json = cmd_output("niri msg -j workspaces");
@@ -271,7 +274,7 @@ WindowManagerSpec *window_manager_spec_create_niri() {
     spec->events_destructor = events_destructor;
     spec->events_reader = events_reader;
     spec->events_validator = events_validator;
-    spec->get_data = get_data;
+    spec->data_getter = data_getter;
     spec->window_focus = window_focus;
     spec->window_close = window_close;
     spec->window_float = window_float;

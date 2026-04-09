@@ -1,4 +1,5 @@
 #include "config.h"
+#include "core/app.h"
 #include "core/window_manager.h"
 #include "json-glib/json-glib.h"
 #include "utils.h"
@@ -143,6 +144,11 @@ static void parse_config_entries(
                 self->window_manager_id = WM_ID_NIRI;
             } else {
                 self->window_manager_id = WM_ID_UNSUPPORTED;
+
+                g_critical(
+                    "Waybar Workspace Taskbar: unsupported window_manager %s",
+                    window_manager
+                );
             }
         }
 

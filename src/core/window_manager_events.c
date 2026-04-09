@@ -1,11 +1,14 @@
 #include "window_manager_events.h"
 #include "glib.h"
+#include "window_manager_data.h"
+#include "window_manager_spec.h"
 #include <fcntl.h>
 #include <stdio.h>
 #include <sys/poll.h>
 #include <unistd.h>
 
 #define WM_EVENTS_POLLING_TIMEOUT 20
+#define WM_EVENTS_DEBOUNCE_TIMEOUT 20
 #define WM_EVENTS_MSG_SIZE 4096
 
 struct _WindowManagerEvents {
@@ -14,13 +17,8 @@ struct _WindowManagerEvents {
     FILE *socket_file;
     struct pollfd poll_fd;
     WindowManagerEvent *event;
-    WindowManagerEventsReader reader;
+    WindowManagerSpec *spec;
     WindowManagerEventsSubscription *subs[WM_EVENTS_MAX_CALlBACKS];
-};
-
-struct _WindowManagerEventsSubscription {
-    WindowManagerEventsCallback cb;
-    gpointer user_data;
 };
 
 /**
@@ -52,7 +50,7 @@ static WindowManagerEvent *window_manager_event_create() {
 }
 
 /**
- * Destroys the window manager event
+ * Destroys the window manager events
  *
  * Again use free instead of g_free because we use stdlib to create so readline
  * can correctly resize the msg
@@ -60,8 +58,36 @@ static WindowManagerEvent *window_manager_event_create() {
  * @param event
  */
 static void window_manager_event_destroy(WindowManagerEvent *event) {
+    if (event->debounce_timeout_id) {
+        g_source_remove(event->debounce_timeout_id);
+    }
+
     free(event->msg);
     free(event);
+}
+
+/**
+ * Function to call after debounce timeout success
+ *
+ * @param user_data The data to be passed (self) in this case
+ */
+static gboolean events_debounce_fn(gpointer user_data) {
+    WindowManagerEvents *self = user_data;
+    WindowManagerDataGetter get_data =
+        window_manager_spec_get_data_getter(self->spec);
+
+    WindowManagerData *wm_data = get_data();
+
+    for (int i = 0; i < WM_EVENTS_MAX_CALlBACKS; ++i) {
+        if (self->subs[i]) {
+            self->subs[i]->cb(wm_data, self->subs[i]->user_data);
+        }
+    }
+
+    window_manager_data_destroy(wm_data);
+    self->event->debounce_timeout_id = 0;
+
+    return G_SOURCE_REMOVE;
 }
 
 /**
@@ -71,27 +97,39 @@ static void window_manager_event_destroy(WindowManagerEvent *event) {
  * @return TRUE if no error else FALSE
  */
 static gboolean window_manager_events_poll(gpointer user_data) {
-    WindowManagerEvents *events = user_data;
-    int ret = poll(&events->poll_fd, 1, 0);
+    WindowManagerEvents *self = user_data;
+    WindowManagerSpec *spec = self->spec;
+    WindowManagerEventsReader events_reader =
+        window_manager_spec_get_events_reader(spec);
+    WindowManagerEventsValidator events_validator =
+        window_manager_spec_get_events_validator(spec);
+
+    int ret = poll(&self->poll_fd, 1, 0);
 
     if (ret < 0) {
         return FALSE;
     }
 
-    if (events->poll_fd.revents & (POLLERR | POLLHUP)) {
+    if (self->poll_fd.revents & (POLLERR | POLLHUP)) {
         return FALSE;
     }
 
-    if (events->poll_fd.revents & POLLIN) {
-        while (events->reader(events->socket_file, events->event)) {
-            for (int i = 0; i < WM_EVENTS_MAX_CALlBACKS; ++i) {
-                if (events->subs[i]) {
-                    events->subs[i]->cb(
-                        events->event,
-                        events->subs[i]->user_data
-                    );
-                }
+    if (self->poll_fd.revents & POLLIN) {
+        while (events_reader(self->socket_file, self->event)) {
+            if (!events_validator(self->event)) {
+                continue;
             }
+
+            if (self->event->debounce_timeout_id != 0) {
+                g_source_remove(self->event->debounce_timeout_id);
+                self->event->debounce_timeout_id = 0;
+            }
+
+            self->event->debounce_timeout_id = g_timeout_add(
+                WM_EVENTS_DEBOUNCE_TIMEOUT,
+                events_debounce_fn,
+                self
+            );
         }
     }
 
@@ -106,36 +144,35 @@ static gboolean window_manager_events_poll(gpointer user_data) {
  * @param events_reader Window manager specific events reader
  * @return The fully created events instance
  */
-WindowManagerEvents *window_manager_events_create(
-    WindowManagerEventsConstructor events_constructor,
-    WindowManagerEventsReader events_reader
-) {
-    WindowManagerEvents *events = g_malloc0(sizeof(WindowManagerEvents));
+WindowManagerEvents *window_manager_events_create(WindowManagerSpec *spec) {
+    WindowManagerEvents *self = g_malloc0(sizeof(WindowManagerEvents));
+    WindowManagerEventsConstructor events_constructor =
+        window_manager_spec_get_events_constructor(spec);
 
     int fd = events_constructor();
 
-    events->socket_file = fdopen(fd, "r");
+    self->socket_file = fdopen(fd, "r");
 
-    if (!events->socket_file) {
-        g_free(events);
+    if (!self->socket_file) {
+        g_free(self);
         perror("fdopen");
         close(fd);
         return NULL;
     }
 
-    events->event = window_manager_event_create();
-    events->reader = events_reader;
-    events->poll_fd.fd = fd;
-    events->poll_fd.events = POLLIN;
-    events->timeout_id = g_timeout_add(
+    self->spec = spec;
+    self->event = window_manager_event_create();
+    self->poll_fd.fd = fd;
+    self->poll_fd.events = POLLIN;
+    self->timeout_id = g_timeout_add(
         WM_EVENTS_POLLING_TIMEOUT,
         window_manager_events_poll,
-        events
+        self
     );
 
-    set_non_block(events->poll_fd.fd);
+    set_non_block(self->poll_fd.fd);
 
-    return events;
+    return self;
 }
 
 /**
@@ -144,49 +181,50 @@ WindowManagerEvents *window_manager_events_create(
  * @pararm events
  * @param destructor The window manager specific events destructor
  */
-void window_manager_events_destroy(
-    WindowManagerEvents *events,
-    WindowManagerEventsDestructor destructor
-) {
-    if (!events) {
+void window_manager_events_destroy(WindowManagerEvents *self) {
+    if (!self) {
         return;
     }
 
+    WindowManagerEventsDestructor destructor =
+        window_manager_spec_get_events_destructor(self->spec);
+
     for (int i = 0; i < WM_EVENTS_MAX_CALlBACKS; ++i) {
-        if (events->subs[i]) {
-            window_manager_events_unsubscribe(events, i);
+        if (self->subs[i]) {
+            window_manager_events_unsubscribe(self, i);
         }
     }
 
-    destructor(events->poll_fd.fd, events->socket_file);
+    destructor(self->poll_fd.fd, self->socket_file);
 
-    window_manager_event_destroy(events->event);
-    g_source_remove(events->timeout_id);
-    g_free(events);
+    window_manager_event_destroy(self->event);
+    g_source_remove(self->timeout_id);
+    g_free(self);
 }
 
 /**
  * Subscribe to the window manager events
  *
- * @param events The events instance
+ * @param self
  * @param cb The function to call on an event
  * @param user_data Any data to pass to the callback
  * @return The id/pos of the subscription in the subscription array -1 if
  * failure
  */
 int window_manager_events_subscribe(
-    WindowManagerEvents *events,
+    WindowManagerEvents *self,
     WindowManagerEventsCallback cb,
     gpointer user_data
 ) {
     for (int i = 0; i < WM_EVENTS_MAX_CALlBACKS; ++i) {
-        if (!events->subs[i]) {
+        if (!self->subs[i]) {
             WindowManagerEventsSubscription *sub =
                 g_malloc(sizeof(WindowManagerEventsSubscription));
 
             sub->cb = cb;
             sub->user_data = user_data;
-            events->subs[i] = sub;
+            self->subs[i] = sub;
+
             return i;
         }
     }
@@ -196,21 +234,18 @@ int window_manager_events_subscribe(
 /**
  * Unsubscribe to the window manager events
  *
- * @param events The events instance
+ * @param self
  * @param id This is the id passed on subscribing.
  * @return TRUE if successfully unsubscribed else FALSE
  */
-gboolean window_manager_events_unsubscribe(
-    WindowManagerEvents *events,
-    int id
-) {
-    if (!events || id < 0 || id >= WM_EVENTS_MAX_CALlBACKS) {
+gboolean window_manager_events_unsubscribe(WindowManagerEvents *self, int id) {
+    if (!self || id < 0 || id >= WM_EVENTS_MAX_CALlBACKS) {
         return FALSE;
     }
 
-    if (events->subs[id]) {
-        g_free(events->subs[id]);
-        events->subs[id] = NULL;
+    if (self->subs[id]) {
+        g_free(self->subs[id]);
+        self->subs[id] = NULL;
     }
 
     return TRUE;
