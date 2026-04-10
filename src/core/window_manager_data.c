@@ -17,6 +17,27 @@ struct _WindowManagerWorkspace {
 };
 
 /**
+ * Sets the focused workspace
+ *
+ * @param self
+ * @param id The id for the workspace
+ */
+void window_manager_data_set_focused_workspace(
+    WindowManagerData *self,
+    int id
+) {
+    WindowManagerWorkspace *ws =
+        g_hash_table_lookup(self->workspaces, GINT_TO_POINTER(id));
+
+    if (!ws) {
+        return;
+    }
+
+    self->focused_workspace_id = id;
+    ws->focused = TRUE;
+}
+
+/**
  * HFunc callback for the foreach in sort windows
  *
  * @param key
@@ -96,16 +117,20 @@ GPtrArray *window_manager_data_get_windows_on_output(
  * @return The windows array or NULL if not found
  */
 GPtrArray *window_manager_data_get_windows_on_focused(WindowManagerData *self) {
+    if (self->focused_workspace_id < 0) {
+        return NULL;
+    }
+
     WindowManagerWorkspace *ws = g_hash_table_lookup(
         self->workspaces,
         GINT_TO_POINTER(self->focused_workspace_id)
     );
 
-    if (ws) {
-        return ws->windows;
+    if (!ws) {
+        return NULL;
     }
 
-    return NULL;
+    return ws->windows;
 }
 
 /**
@@ -147,6 +172,7 @@ gboolean window_manager_data_window_create(
     const gchar *app_id,
     int ws_id,
     int focused,
+    int floating,
     int x,
     int y
 ) {
@@ -164,6 +190,7 @@ gboolean window_manager_data_window_create(
     win->app_id = g_strdup(app_id);
     win->ws_id = ws_id;
     win->focused = focused;
+    win->floating = floating;
     win->x = x;
     win->y = y;
 
@@ -237,7 +264,7 @@ void window_manager_data_destroy(WindowManagerData *self) {
 WindowManagerData *window_manager_data_create() {
     WindowManagerData *self = g_malloc(sizeof(WindowManagerData));
 
-    self->focused_workspace_id = 0;
+    self->focused_workspace_id = -1;
     self->workspaces = g_hash_table_new_full(
         g_direct_hash,
         g_direct_equal,

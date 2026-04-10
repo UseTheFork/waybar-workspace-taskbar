@@ -225,6 +225,8 @@ static WindowManagerData *data_getter() {
         const gchar *title = json_object_get_string_member(win, "title");
         const gchar *app_id = json_object_get_string_member(win, "app_id");
         gboolean is_focused = json_object_get_boolean_member(win, "is_focused");
+        gboolean is_floating =
+            json_object_get_boolean_member(win, "is_floating");
 
         char id_str[32];
         snprintf(id_str, sizeof(id_str), "%" G_GINT64_FORMAT, id);
@@ -254,6 +256,7 @@ static WindowManagerData *data_getter() {
             app_id,
             ws_id,
             (int)is_focused,
+            (int)is_floating,
             x,
             y
         );

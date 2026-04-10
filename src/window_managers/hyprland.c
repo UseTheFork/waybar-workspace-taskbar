@@ -1,7 +1,5 @@
 #include "hyprland.h"
 #include "common.h"
-#include "core/app.h"
-#include "core/config.h"
 #include "core/utils.h"
 #include "core/window_manager_data.h"
 #include "core/window_manager_events.h"
@@ -207,6 +205,7 @@ static WindowManagerData *data_getter() {
         gint64 focusHistoryID =
             json_object_get_int_member(client, "focusHistoryID");
         gint64 ws_id = json_object_get_int_member(ws, "id");
+        gboolean floating = json_object_get_boolean_member(ws, "floating");
 
         JsonArray *at = json_object_get_array_member(client, "at");
         gint64 x = json_array_get_int_element(at, 0);
@@ -219,6 +218,7 @@ static WindowManagerData *data_getter() {
             class,
             ws_id,
             focusHistoryID == 0 ? 1 : 0,
+            floating,
             x,
             y
         );

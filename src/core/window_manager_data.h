@@ -13,6 +13,7 @@ typedef struct {
     gchar *app_id;
     int ws_id;
     int focused;
+    int floating;
     int x;
     int y;
 } WindowManagerWindow;
@@ -33,6 +34,7 @@ gboolean window_manager_data_window_create(
     const gchar *app_id,
     int ws_id,
     int focused,
+    int floating,
     int x,
     int y
 );
@@ -48,5 +50,7 @@ void window_manager_data_sort_windows(
     WindowManagerData *self,
     GCompareFunc compare_fn
 );
+
+void window_manager_data_set_focused_workspace(WindowManagerData *self, int id);
 
 G_END_DECLS;

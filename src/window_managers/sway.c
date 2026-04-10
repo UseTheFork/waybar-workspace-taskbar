@@ -6,6 +6,7 @@
 #include "core/window_manager_spec.h"
 #include "glib.h"
 #include <stdio.h>
+#include <string.h>
 
 #define SWAY_MAGIC "i3-ipc"
 #define SWAY_MAGIC_LEN 6
@@ -177,9 +178,16 @@ static void walk_tree(
         (strcmp(type, "con") == 0 || strcmp(type, "floating_con") == 0)) {
 
         gint64 id = json_object_get_int_member(node, "id");
-        const char *name = json_object_get_string_member(node, "name");
-        const char *app_id = json_object_get_string_member(node, "app_id");
+        const gchar *name = json_object_get_string_member(node, "name");
+        const gchar *app_id = json_object_get_string_member(node, "app_id");
         gboolean focused = json_object_get_boolean_member(node, "focused");
+
+        gboolean is_floating;
+        if (strcmp("floating_con", type) == 0) {
+            is_floating = TRUE;
+        } else {
+            is_floating = FALSE;
+        }
 
         char id_str[32];
         snprintf(id_str, sizeof(id_str), "%" G_GINT64_FORMAT, id);
@@ -202,9 +210,14 @@ static void walk_tree(
             app_id,
             workspace_id,
             focused,
+            is_floating,
             x,
             y
         );
+
+        if (focused) {
+            window_manager_data_set_focused_workspace(wm_data, workspace_id);
+        }
     }
 
     JsonArray *nodes = json_object_get_array_member(node, "nodes");
