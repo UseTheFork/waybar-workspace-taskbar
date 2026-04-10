@@ -109,7 +109,7 @@ static gboolean events_validator(WindowManagerEvent *event) {
 
         if (strcmp("title", change) == 0 || strcmp("focus", change) == 0 ||
             strcmp("new", change) == 0 || strcmp("close", change) == 0 ||
-            strcmp("empty", change) == 0 || strcmp("floating", change)) {
+            strcmp("empty", change) == 0 || strcmp("floating", change) == 0) {
 
             g_object_unref(parser);
             return TRUE;
@@ -181,13 +181,7 @@ static void walk_tree(
         const gchar *name = json_object_get_string_member(node, "name");
         const gchar *app_id = json_object_get_string_member(node, "app_id");
         gboolean focused = json_object_get_boolean_member(node, "focused");
-
-        gboolean is_floating;
-        if (strcmp("floating_con", type) == 0) {
-            is_floating = TRUE;
-        } else {
-            is_floating = FALSE;
-        }
+        gboolean urgent = json_object_get_boolean_member(node, "urgent");
 
         char id_str[32];
         snprintf(id_str, sizeof(id_str), "%" G_GINT64_FORMAT, id);
@@ -210,7 +204,8 @@ static void walk_tree(
             app_id,
             workspace_id,
             focused,
-            is_floating,
+            strcmp("floating_con", type) == 0,
+            urgent,
             x,
             y
         );

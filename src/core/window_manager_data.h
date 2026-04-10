@@ -14,6 +14,7 @@ typedef struct {
     int ws_id;
     int focused;
     int floating;
+    int urgent;
     int x;
     int y;
 } WindowManagerWindow;
@@ -35,6 +36,7 @@ gboolean window_manager_data_window_create(
     int ws_id,
     int focused,
     int floating,
+    int urgent,
     int x,
     int y
 );

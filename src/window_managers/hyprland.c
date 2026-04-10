@@ -219,6 +219,7 @@ static WindowManagerData *data_getter() {
             ws_id,
             focusHistoryID == 0 ? 1 : 0,
             floating,
+            FALSE,
             x,
             y
         );

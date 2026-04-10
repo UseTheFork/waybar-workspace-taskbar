@@ -55,7 +55,7 @@ WindowManagerEventsValidator window_manager_spec_get_events_validator(
 /**
  * Gets the click handler from the the window manager based on type
  *
- * @param self Window manager struct
+ * @param self
  * @param type The click handler type
  * @return The click handler from window manager spec
  */

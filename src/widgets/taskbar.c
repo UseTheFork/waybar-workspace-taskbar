@@ -16,6 +16,10 @@ struct _WwtTaskbar {
 G_DEFINE_TYPE(WwtTaskbar, wwt_taskbar, GTK_TYPE_BOX);
 
 #define TASKBAR_CLASS_NAME "taskbar"
+#define TASKBAR_CLASS_NAME_EMPTY "empty"
+#define TASKBAR_CLASS_NAME_SINGLE "single"
+#define TASKBAR_CLASS_NAME_OVERFLOW_START "overflow-start"
+#define TASKBAR_CLASS_NAME_OVERFLOW_END "overflow-end"
 
 /**
  * Handles the visual state after tab generation.
@@ -25,37 +29,37 @@ G_DEFINE_TYPE(WwtTaskbar, wwt_taskbar, GTK_TYPE_BOX);
  * @param overflow_start Whether there is max tabs overflow at the start
  * @param overflow_end Whether there is max tabs overflow at the end
  */
-void wwt_taskbar_apply_visual_state(
-    WwtTaskbar *tabs,
+void wwt_taskbar_apply_class_names(
+    WwtTaskbar *self,
     int tab_len,
     gboolean overflow_start,
     gboolean overflow_end
 ) {
-    GtkStyleContext *ctx = gtk_widget_get_style_context(GTK_WIDGET(tabs));
+    GtkStyleContext *ctx = gtk_widget_get_style_context(GTK_WIDGET(self));
 
     if (tab_len == 0) {
-        gtk_style_context_add_class(ctx, "empty-tabs");
+        gtk_style_context_add_class(ctx, TASKBAR_CLASS_NAME_EMPTY);
 
     } else {
-        gtk_style_context_remove_class(ctx, "empty-tabs");
+        gtk_style_context_remove_class(ctx, TASKBAR_CLASS_NAME_EMPTY);
     }
 
     if (tab_len == 1) {
-        gtk_style_context_add_class(ctx, "single-tab");
+        gtk_style_context_add_class(ctx, TASKBAR_CLASS_NAME_SINGLE);
     } else {
-        gtk_style_context_remove_class(ctx, "single-tab");
+        gtk_style_context_remove_class(ctx, TASKBAR_CLASS_NAME_SINGLE);
     }
 
     if (overflow_start) {
-        gtk_style_context_add_class(ctx, "overflow-start");
+        gtk_style_context_add_class(ctx, TASKBAR_CLASS_NAME_OVERFLOW_START);
     } else {
-        gtk_style_context_remove_class(ctx, "overflow-start");
+        gtk_style_context_remove_class(ctx, TASKBAR_CLASS_NAME_OVERFLOW_START);
     }
 
     if (overflow_end) {
-        gtk_style_context_add_class(ctx, "overflow-end");
+        gtk_style_context_add_class(ctx, TASKBAR_CLASS_NAME_OVERFLOW_END);
     } else {
-        gtk_style_context_remove_class(ctx, "overflow-end");
+        gtk_style_context_remove_class(ctx, TASKBAR_CLASS_NAME_OVERFLOW_END);
     }
 }
 
@@ -131,6 +135,8 @@ void wwt_taskbar_populate_tabs(WindowManagerData *wm_data, gpointer user_data) {
                 win->title,
                 win->app_id,
                 win->focused,
+                win->floating,
+                win->urgent,
                 win->x,
                 win->y
             );
@@ -143,6 +149,8 @@ void wwt_taskbar_populate_tabs(WindowManagerData *wm_data, gpointer user_data) {
                 win->title,
                 win->app_id,
                 win->focused,
+                win->floating,
+                win->urgent,
                 win->x,
                 win->y
             );
@@ -164,7 +172,7 @@ void wwt_taskbar_populate_tabs(WindowManagerData *wm_data, gpointer user_data) {
 
     gboolean overflow_start = start > 0;
     gboolean overflow_end = end < (int)wins->len;
-    wwt_taskbar_apply_visual_state(
+    wwt_taskbar_apply_class_names(
         self,
         wins->len,
         overflow_start,

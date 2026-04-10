@@ -14,6 +14,8 @@ WwtTab *wwt_tab_new(
     const gchar *title,
     const gchar *app_id,
     int focused,
+    int floating,
+    int urgent,
     int x,
     int y
 );
@@ -24,6 +26,8 @@ void wwt_tab_update(
     const gchar *title,
     const gchar *app_id,
     int focused,
+    int floating,
+    int urgent,
     int x,
     int y
 );

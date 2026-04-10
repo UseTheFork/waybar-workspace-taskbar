@@ -77,7 +77,7 @@ Even though your using jsonc waybar doesn't parse out the comments when passing 
 
 A couple of css classes will be applied `.taskbar`, `.tab`, `.tab.focused`, `.taskbar.overflow-start`, `.taskbar.overflow-end`. You can style things to your liking.
 
-Simple example:
+Simple example obviously you should style these to your liking:
 
 ```
 .taskbar.overflow-start {
@@ -88,6 +88,14 @@ Simple example:
   border-right: 10px solid red;
 }
 
+.taskbar.empty {
+  /* if you want specific styles when empty */
+}
+
+.taskbar.single {
+  /* if you want specific styles when only 1 tab is displayed */
+}
+
 .tab {
   color: white;
   padding: 5px 10px;
@@ -95,6 +103,14 @@ Simple example:
 
 .tab.focused {
   background: blue;
+}
+
+.tab.floating {
+  color: green;
+}
+
+.tab.urgent {
+  color: red;
 }
 ```
 
@@ -112,11 +128,12 @@ Still trying to figure out how I want to handle sorting when a workspace has flo
 
 Hyprland
 
-- Monocle layout I've yet to figured out how to properly sort the windows. So windows will appear as they come from hyprland.
+- Monocle layout doesnt have a good way to properly sort the windows. So windows will appear as they come from hyprland.
+- Hyprctl doesn't expose urgent status when fetching window information.
 
-Sway
+Niri
 
-- Sorting directly after toggling off float can be wrong until you change focus. Sway either doesn't reparent the window right away or there is a delay.
+- Urgent status is hit or miss.
 
 ## License
 

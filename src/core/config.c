@@ -27,12 +27,12 @@ G_DEFINE_TYPE(WwtConfig, wwt_config, G_TYPE_OBJECT);
  */
 void wwt_config_log_entries(WwtConfig *self) {
     printf("Config Entries\n");
-    printf("output: %s\n", self->output);
-    printf("max_tabs: %d\n", self->max_tabs);
     printf("window_manager_id: %d\n", self->window_manager_id);
+    printf("output: %s\n", self->output);
     printf("show_title: %d\n", self->show_title);
     printf("show_icon: %d\n", self->show_icon);
     printf("title_max_chars: %d\n", self->title_max_chars);
+    printf("max_tabs: %d\n", self->max_tabs);
 }
 
 /**

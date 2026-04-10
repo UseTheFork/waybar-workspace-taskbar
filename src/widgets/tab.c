@@ -8,6 +8,8 @@
 
 #define TAB_CLASS_NAME "tab"
 #define TAB_CLASS_NAME_FOCUSED "focused"
+#define TAB_CLASS_NAME_FLOATING "floating"
+#define TAB_CLASS_NAME_URGENT "urgent"
 #define TITLE_MIN_CHARS 3
 
 struct _WwtTab {
@@ -18,11 +20,43 @@ struct _WwtTab {
     gchar *title;
     gchar *app_id;
     int focused;
+    int floating;
+    int urgent;
     int x;
     int y;
 };
 
 G_DEFINE_TYPE(WwtTab, wwt_tab, GTK_TYPE_BUTTON);
+
+/**
+ * Apply the class names based on the window state
+ *
+ * @parma self
+ */
+static void apply_class_names(WwtTab *self) {
+    GtkStyleContext *ctx = gtk_widget_get_style_context(GTK_WIDGET(self));
+
+    if (self->focused) {
+        gtk_style_context_add_class(ctx, TAB_CLASS_NAME_FOCUSED);
+
+    } else {
+        gtk_style_context_remove_class(ctx, TAB_CLASS_NAME_FOCUSED);
+    }
+
+    if (self->floating) {
+        gtk_style_context_add_class(ctx, TAB_CLASS_NAME_FLOATING);
+
+    } else {
+        gtk_style_context_remove_class(ctx, TAB_CLASS_NAME_FLOATING);
+    }
+
+    if (self->urgent) {
+        gtk_style_context_add_class(ctx, TAB_CLASS_NAME_URGENT);
+
+    } else {
+        gtk_style_context_remove_class(ctx, TAB_CLASS_NAME_URGENT);
+    }
+}
 
 /**
  * Trucats the title with an elipsis
@@ -196,41 +230,41 @@ static void wwt_tab_class_init(WwtTabClass *klass) {
  *
  * @param self The tab instance
  * @param id The tabs id (should be the same as the compositor window)
- * @param name The window name
+ * @param title The window title
  * @param app_id The application id or class
  * @param ws_name The workspace name
  * @param focused The focused status
+ * @param floating The floating status
+ * @param urgent The urgent status
  * @param x Window position x
  * @param y Window position y
  */
 void wwt_tab_update(
     WwtTab *self,
     const gchar *win_id,
-    const gchar *name,
+    const gchar *title,
     const gchar *app_id,
     int focused,
+    int floating,
+    int urgent,
     int x,
     int y
 ) {
     g_free(self->win_id);
     self->win_id = g_strdup(win_id);
     g_free(self->title);
-    self->title = g_strdup(name);
+    self->title = g_strdup(title);
     g_free(self->app_id);
     self->app_id = g_strdup(app_id);
 
     self->focused = focused;
+    self->floating = floating;
+    self->urgent = urgent;
     self->x = x;
     self->y = y;
 
+    apply_class_names(self);
     setup_title_and_icon(self);
-
-    GtkStyleContext *ctx = gtk_widget_get_style_context(GTK_WIDGET(self));
-    if (self->focused) {
-        gtk_style_context_add_class(ctx, TAB_CLASS_NAME_FOCUSED);
-    } else {
-        gtk_style_context_remove_class(ctx, TAB_CLASS_NAME_FOCUSED);
-    }
 }
 
 /**
@@ -238,9 +272,11 @@ void wwt_tab_update(
  *
  * @param tabs The tabs instance
  * @param id The tabs id (should be the same as the compositor window)
- * @param name The window name
+ * @param title The window title
  * @param app_id The application id or class
  * @param focused The focused status
+ * @param floating The floating status
+ * @param urgent The urgent status
  * @param x Window position x
  * @param y Window position y
  * @return The created tab widget
@@ -248,9 +284,11 @@ void wwt_tab_update(
 WwtTab *wwt_tab_new(
     WwtApp *app,
     const gchar *win_id,
-    const gchar *name,
+    const gchar *title,
     const gchar *app_id,
     int focused,
+    int floating,
+    int urgent,
     int x,
     int y
 ) {
@@ -258,9 +296,11 @@ WwtTab *wwt_tab_new(
 
     self->app = app;
     self->win_id = g_strdup(win_id);
-    self->title = g_strdup(name);
+    self->title = g_strdup(title);
     self->app_id = g_strdup(app_id);
     self->focused = focused;
+    self->floating = floating;
+    self->urgent = urgent;
     self->x = x;
     self->y = y;
 
@@ -269,10 +309,7 @@ WwtTab *wwt_tab_new(
     GtkStyleContext *ctx = gtk_widget_get_style_context(GTK_WIDGET(self));
     gtk_style_context_add_class(ctx, TAB_CLASS_NAME);
 
-    if (self->focused) {
-        gtk_style_context_add_class(ctx, TAB_CLASS_NAME_FOCUSED);
-    }
-
+    apply_class_names(self);
     setup_title_and_icon(self);
 
     gfloat text_align = wwt_config_get_text_align(config);

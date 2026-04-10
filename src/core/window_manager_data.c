@@ -44,11 +44,7 @@ void window_manager_data_set_focused_workspace(
  * @param value
  * @param user_data
  */
-static void sort_foreach_hfunc(
-    gpointer key,
-    gpointer value,
-    gpointer user_data
-) {
+static void sort_foreach_fn(gpointer key, gpointer value, gpointer user_data) {
     WindowManagerWorkspace *ws = value;
     GCompareFunc compare_fn = user_data;
 
@@ -64,7 +60,7 @@ void window_manager_data_sort_windows(
     WindowManagerData *self,
     GCompareFunc compare_fn
 ) {
-    g_hash_table_foreach(self->workspaces, sort_foreach_hfunc, compare_fn);
+    g_hash_table_foreach(self->workspaces, sort_foreach_fn, compare_fn);
 }
 
 /**
@@ -163,6 +159,15 @@ static void window_manager_workspace_destroy(gpointer data) {
 /**
  * Creates a window and adds to a workspace
  *
+ * @param self
+ * @param id The tabs id (should be the same as the compositor window)
+ * @param title The window title
+ * @param app_id The application id or class
+ * @param focused The focused status
+ * @param floating The floating status
+ * @param urgent The urgent status
+ * @param x Window position x
+ * @param y Window position y
  * @return TRUE if inserted else FALSE
  */
 gboolean window_manager_data_window_create(
@@ -173,6 +178,7 @@ gboolean window_manager_data_window_create(
     int ws_id,
     int focused,
     int floating,
+    int urgent,
     int x,
     int y
 ) {
@@ -191,6 +197,7 @@ gboolean window_manager_data_window_create(
     win->ws_id = ws_id;
     win->focused = focused;
     win->floating = floating;
+    win->urgent = urgent;
     win->x = x;
     win->y = y;
 
@@ -247,7 +254,6 @@ static void table_items_destroy_notify(gpointer data) {
  * @param self
  */
 void window_manager_data_destroy(WindowManagerData *self) {
-
     if (self->workspaces) {
         g_hash_table_destroy(self->workspaces);
         self->workspaces = NULL;

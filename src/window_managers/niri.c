@@ -227,6 +227,7 @@ static WindowManagerData *data_getter() {
         gboolean is_focused = json_object_get_boolean_member(win, "is_focused");
         gboolean is_floating =
             json_object_get_boolean_member(win, "is_floating");
+        gboolean is_urgent = json_object_get_boolean_member(win, "is_urgent");
 
         char id_str[32];
         snprintf(id_str, sizeof(id_str), "%" G_GINT64_FORMAT, id);
@@ -255,8 +256,9 @@ static WindowManagerData *data_getter() {
             title,
             app_id,
             ws_id,
-            (int)is_focused,
-            (int)is_floating,
+            is_focused,
+            is_floating,
+            is_urgent,
             x,
             y
         );
