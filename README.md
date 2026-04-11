@@ -128,6 +128,7 @@ Hyprland
 
 - Monocle layout doesnt have a good way to properly sort the windows. So windows will appear as they come from hyprland.
 - Hyprctl doesn't expose urgent status when fetching window information.
+- Hyprland doesn't send an event when toggling floating windows. So window status and sorting will not be updated until you change focus.
 
 Niri
 
