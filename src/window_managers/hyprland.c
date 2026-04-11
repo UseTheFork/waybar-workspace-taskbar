@@ -211,7 +211,7 @@ static WindowManagerData *data_getter() {
         gint64 focusHistoryID =
             json_object_get_int_member(client, "focusHistoryID");
         gint64 ws_id = json_object_get_int_member(ws, "id");
-        gboolean floating = json_object_get_boolean_member(ws, "floating");
+        gboolean floating = json_object_get_boolean_member(client, "floating");
 
         JsonArray *at = json_object_get_array_member(client, "at");
         gint64 x = json_array_get_int_element(at, 0);
@@ -231,10 +231,9 @@ static WindowManagerData *data_getter() {
         );
     }
 
+    window_manager_data_sort_windows(wm_data, window_sort);
     g_object_unref(clients_parser);
     g_free(batch_json);
-
-    window_manager_data_sort_windows(wm_data, window_sort);
 
     return wm_data;
 }

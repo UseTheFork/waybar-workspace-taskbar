@@ -269,12 +269,11 @@ static WindowManagerData *data_getter() {
         );
     }
 
+    window_manager_data_sort_windows(wm_data, window_sort);
     g_object_unref(win_parser);
     g_object_unref(ws_parser);
     g_free(win_json);
     g_free(ws_json);
-
-    window_manager_data_sort_windows(wm_data, window_sort);
 
     return wm_data;
 }

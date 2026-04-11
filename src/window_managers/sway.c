@@ -109,8 +109,9 @@ static gboolean events_validator(WindowManagerEvent *event) {
         const gchar *change = json_object_get_string_member(root_obj, "change");
 
         if(strcmp("title", change) == 0 || strcmp("focus", change) == 0 ||
-            strcmp("new", change) == 0 || strcmp("close", change) == 0 ||
-            strcmp("empty", change) == 0 || strcmp("floating", change) == 0) {
+            strcmp("new", change) == 0 || strcmp("move", change) == 0 ||
+            strcmp("close", change) == 0 || strcmp("empty", change) == 0 ||
+            strcmp("floating", change) == 0) {
             g_object_unref(parser);
             return TRUE;
         }
@@ -331,9 +332,9 @@ static WindowManagerData *data_getter() {
     }
 
     window_manager_data_sort_windows(wm_data, window_sort);
-
     g_object_unref(parser);
     g_free(json_str);
+
     return wm_data;
 }
 
