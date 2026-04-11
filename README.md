@@ -4,7 +4,7 @@
 
 Workspace taskbar for window managers that shows only open windows from the current workspace. This differs from included wlr taskbar which shows all open windows on all workspaces. This takes advantage of the waybar cffi module [Waybar CFFI](https://github.com/Alexays/Waybar/wiki/Module:-CFFI).
 
-This was developed mostly due to non traditional window manager layouts like scrolling, fullscreen tabbed, or monocle where you can easily lose track of your open windows. This gives you the ability to easily visualize your open windows. Tabs will try to be sorted so they reflect the left and right cycling positions of your windows.
+This was developed mostly due to non traditional window manager layouts like scrolling, fullscreen tabbed, or monocle where you can easily lose track of your open windows. This gives you the ability to easily visualize your open windows. Tabs will try to be sorted so they reflect the left and right cycling positions of your windows. All floating windows will be sorted to the end in the order they are received.
 
 ## Suported Window Managers
 
@@ -124,8 +124,6 @@ This is fairly simple.
 
 ## Known issues
 
-Still trying to figure out how I want to handle sorting when a workspace has floating windows.
-
 Hyprland
 
 - Monocle layout doesnt have a good way to properly sort the windows. So windows will appear as they come from hyprland.
@@ -137,4 +135,4 @@ Niri
 
 ## License
 
-Waybar Workspace Taskbar is licensed under the MIT license. See LICENSE for more information.
+Waybar Workspace Taskbar is licensed under the MIT license. See [LICENSE](https://github.com/stevekanger/waybar-workspace-taskbar/blob/main/LICENSE) for more information.

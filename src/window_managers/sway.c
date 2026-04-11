@@ -151,6 +151,20 @@ static gboolean window_float(const char *id) {
 }
 
 /**
+ * Called when sorting the windows. Sort floating windows to end
+ *
+ * @param a The current window
+ * @param b The next window
+ * @return < 0 if should swap
+ */
+static int window_sort(gconstpointer a, gconstpointer b) {
+    const WindowManagerWindow *cur = *(const WindowManagerWindow **)a;
+    const WindowManagerWindow *next = *(const WindowManagerWindow **)b;
+
+    return cur->floating - next->floating;
+}
+
+/**
  * Walks the sway tree and finds windows
  *
  * @param wins The windows array
@@ -315,6 +329,8 @@ static WindowManagerData *data_getter() {
             walk_tree(wm_data, ws, workspace_id);
         }
     }
+
+    window_manager_data_sort_windows(wm_data, window_sort);
 
     g_object_unref(parser);
     g_free(json_str);

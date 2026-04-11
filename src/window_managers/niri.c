@@ -119,20 +119,25 @@ static gboolean window_float(const char *id) {
 
 /**
  * Called when sorting the windows. Sort from left to right top to
- * bottom
+ * bottom. Sort all floating windows to end.
  *
- * @param cur The current window
- * @param prev The previous window
+ * @param a The current window
+ * @param b The next window
  * @return < 0 if should swap
  */
-static int should_swap(gconstpointer a, gconstpointer b) {
+static int window_sort(gconstpointer a, gconstpointer b) {
     const WindowManagerWindow *cur = *(const WindowManagerWindow **)a;
-    const WindowManagerWindow *prev = *(const WindowManagerWindow **)b;
+    const WindowManagerWindow *next = *(const WindowManagerWindow **)b;
 
-    if(cur->x != prev->x) {
-        return cur->x - prev->x;
+    if(cur->floating != next->floating) {
+        return cur->floating - next->floating;
     }
-    return cur->y - prev->y;
+
+    if(cur->x != next->x) {
+        return cur->x - next->x;
+    }
+
+    return cur->y - next->y;
 }
 
 /**
@@ -269,7 +274,7 @@ static WindowManagerData *data_getter() {
     g_free(win_json);
     g_free(ws_json);
 
-    window_manager_data_sort_windows(wm_data, should_swap);
+    window_manager_data_sort_windows(wm_data, window_sort);
 
     return wm_data;
 }
