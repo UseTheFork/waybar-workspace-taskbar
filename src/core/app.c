@@ -104,17 +104,16 @@ WwtApp *wwt_app_new(
     WwtApp *self = g_object_new(WWT_APP_TYPE, NULL);
 
     self->waybar_module = init_info->obj;
-
     self->config = wwt_config_new(config_entries, config_entries_len);
     WindowManagerId wm_id = wwt_config_get_wm_id(self->config);
 
-    if (wm_id == WM_ID_UNSUPPORTED) {
+    if(wm_id == WM_ID_UNSUPPORTED) {
         g_object_unref(self);
         return NULL;
     }
 
     self->window_manager = window_manager_default(self, wm_id);
-    if (!self->window_manager) {
+    if(!self->window_manager) {
         g_object_unref(self);
         g_critical(
             "Waybar Workspace Taskbar: error initializing window manager"
@@ -137,7 +136,7 @@ WwtApp *wwt_app_new(
         window_manager_spec_get_data_getter(spec);
 
     WindowManagerData *wm_data = get_data();
-    if (wm_data) {
+    if(wm_data) {
         wwt_taskbar_populate_tabs(wm_data, self->taskbar);
         window_manager_data_destroy(wm_data);
     }

@@ -1,12 +1,63 @@
 BasedOnStyle: LLVM
+Language: C
 ColumnLimit: 80
-BinPackParameters: false
-BinPackArguments: false
+TabWidth: 4
+IndentWidth: 4
+ContinuationIndentWidth: 4
+BracedInitializerIndentWidth: 4
+ConstructorInitializerIndentWidth: 4
 AllowAllArgumentsOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
-PenaltyBreakBeforeFirstCallParameter: 0
-AlignAfterOpenBracket: BlockIndent
-PointerAlignment: Right
-PenaltyReturnTypeOnItsOwnLine: 1000
+AlignAfterOpenBracket: false
+AllowShortIfStatementsOnASingleLine: WithoutElse
 AllowShortFunctionsOnASingleLine: None
-IndentWidth: 4
+BinPackArguments: false
+BinPackLongBracedList: false
+BinPackParameters: false
+BreakAfterOpenBracketBracedList: true
+BreakAfterOpenBracketFunction: true
+BreakAfterOpenBracketIf: true
+BreakAfterOpenBracketLoop: true
+BreakAfterOpenBracketSwitch: true
+BreakBeforeCloseBracketBracedList: true
+BreakBeforeCloseBracketFunction: true
+BreakBeforeCloseBracketIf: true
+BreakBeforeCloseBracketLoop: true
+BreakBeforeCloseBracketSwitch: true
+IncludeBlocks: Merge
+IndentCaseBlocks: true
+IndentCaseLabels: true
+IndentExportBlock: true
+IndentExternBlock: true
+KeepEmptyLines:
+  AtEndOfFile: false
+  AtStartOfBlock: false
+  AtStartOfFile: false
+IndentWrappedFunctionNames: true
+PenaltyReturnTypeOnItsOwnLine: 1000
+PenaltyBreakBeforeFirstCallParameter: 0
+PointerAlignment: Right
+ReferenceAlignment: Right
+RemoveEmptyLinesInUnwrappedLines: true
+SortIncludes: true
+SpaceAfterCStyleCast: false
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeParens: Custom
+SpaceBeforeParensOptions:
+  AfterControlStatements: false
+  AfterForeachMacros: false
+  AfterFunctionDefinitionName: false
+  AfterIfMacros: false
+  AfterNot: false
+  AfterOverloadedOperator: false
+  AfterPlacementOperator: false
+  AfterRequiresInClause: false
+  AfterRequiresInExpression: false
+  BeforeNonEmptyParentheses: false
+SpaceBeforeSquareBrackets: false
+SpaceInEmptyBraces: Never
+SpacesInContainerLiterals: false
+SpacesInParens: Never
+SpacesInSquareBrackets: false
+UseTab: Never

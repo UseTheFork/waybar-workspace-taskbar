@@ -58,7 +58,7 @@ static WindowManagerEvent *window_manager_event_create() {
  * @param event
  */
 static void window_manager_event_destroy(WindowManagerEvent *event) {
-    if (event->debounce_timeout_id) {
+    if(event->debounce_timeout_id) {
         g_source_remove(event->debounce_timeout_id);
     }
 
@@ -78,13 +78,13 @@ static gboolean events_debounce_fn(gpointer user_data) {
 
     WindowManagerData *wm_data = get_data();
 
-    if (!wm_data) {
+    if(!wm_data) {
         self->event->debounce_timeout_id = 0;
         return G_SOURCE_REMOVE;
     }
 
-    for (int i = 0; i < WM_EVENTS_MAX_CALlBACKS; ++i) {
-        if (self->subs[i]) {
+    for(int i = 0; i < WM_EVENTS_MAX_CALlBACKS; ++i) {
+        if(self->subs[i]) {
             self->subs[i]->cb(wm_data, self->subs[i]->user_data);
         }
     }
@@ -111,21 +111,21 @@ static gboolean window_manager_events_poll(gpointer user_data) {
 
     int ret = poll(&self->poll_fd, 1, 0);
 
-    if (ret < 0) {
+    if(ret < 0) {
         return FALSE;
     }
 
-    if (self->poll_fd.revents & (POLLERR | POLLHUP)) {
+    if(self->poll_fd.revents & (POLLERR | POLLHUP)) {
         return FALSE;
     }
 
-    if (self->poll_fd.revents & POLLIN) {
-        while (events_reader(self->socket_file, self->event)) {
-            if (!events_validator(self->event)) {
+    if(self->poll_fd.revents & POLLIN) {
+        while(events_reader(self->socket_file, self->event)) {
+            if(!events_validator(self->event)) {
                 continue;
             }
 
-            if (self->event->debounce_timeout_id != 0) {
+            if(self->event->debounce_timeout_id != 0) {
                 g_source_remove(self->event->debounce_timeout_id);
                 self->event->debounce_timeout_id = 0;
             }
@@ -158,7 +158,7 @@ WindowManagerEvents *window_manager_events_create(WindowManagerSpec *spec) {
 
     self->socket_file = fdopen(fd, "r");
 
-    if (!self->socket_file) {
+    if(!self->socket_file) {
         g_free(self);
         perror("fdopen");
         close(fd);
@@ -187,15 +187,15 @@ WindowManagerEvents *window_manager_events_create(WindowManagerSpec *spec) {
  * @param destructor The window manager specific events destructor
  */
 void window_manager_events_destroy(WindowManagerEvents *self) {
-    if (!self) {
+    if(!self) {
         return;
     }
 
     WindowManagerEventsDestructor destructor =
         window_manager_spec_get_events_destructor(self->spec);
 
-    for (int i = 0; i < WM_EVENTS_MAX_CALlBACKS; ++i) {
-        if (self->subs[i]) {
+    for(int i = 0; i < WM_EVENTS_MAX_CALlBACKS; ++i) {
+        if(self->subs[i]) {
             window_manager_events_unsubscribe(self, i);
         }
     }
@@ -221,8 +221,8 @@ int window_manager_events_subscribe(
     WindowManagerEventsCallback cb,
     gpointer user_data
 ) {
-    for (int i = 0; i < WM_EVENTS_MAX_CALlBACKS; ++i) {
-        if (!self->subs[i]) {
+    for(int i = 0; i < WM_EVENTS_MAX_CALlBACKS; ++i) {
+        if(!self->subs[i]) {
             WindowManagerEventsSubscription *sub =
                 g_malloc(sizeof(WindowManagerEventsSubscription));
 
@@ -244,11 +244,11 @@ int window_manager_events_subscribe(
  * @return TRUE if successfully unsubscribed else FALSE
  */
 gboolean window_manager_events_unsubscribe(WindowManagerEvents *self, int id) {
-    if (!self || id < 0 || id >= WM_EVENTS_MAX_CALlBACKS) {
+    if(!self || id < 0 || id >= WM_EVENTS_MAX_CALlBACKS) {
         return FALSE;
     }
 
-    if (self->subs[id]) {
+    if(self->subs[id]) {
         g_free(self->subs[id]);
         self->subs[id] = NULL;
     }

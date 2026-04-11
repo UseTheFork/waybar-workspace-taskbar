@@ -63,15 +63,15 @@ WindowManagerClickHandler window_manager_spec_get_click_handler(
     WindowManagerSpec *self,
     WindowManagerClickHandlerType type
 ) {
-    if (type == WM_CLICK_FOCUS) {
+    if(type == WM_CLICK_FOCUS) {
         return self->window_focus;
     }
 
-    if (type == WM_CLICK_CLOSE) {
+    if(type == WM_CLICK_CLOSE) {
         return self->window_close;
     }
 
-    if (type == WM_CLICK_FLOAT) {
+    if(type == WM_CLICK_FLOAT) {
         return self->window_float;
     }
 
@@ -109,15 +109,15 @@ WindowManagerSpec *window_manager_spec_create(WwtApp *app) {
     WwtConfig *config = wwt_app_get_config(app);
     int wm_id = wwt_config_get_wm_id(config);
 
-    if (wm_id == WM_ID_NIRI) {
+    if(wm_id == WM_ID_NIRI) {
         return window_manager_spec_create_niri();
     }
 
-    if (wm_id == WM_ID_HYPRLAND) {
+    if(wm_id == WM_ID_HYPRLAND) {
         return window_manager_spec_create_hyprland();
     }
 
-    if (wm_id == WM_ID_SWAY) {
+    if(wm_id == WM_ID_SWAY) {
         return window_manager_spec_create_sway();
     }
 

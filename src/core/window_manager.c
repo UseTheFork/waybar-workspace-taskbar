@@ -56,12 +56,12 @@ WindowManagerEvents *wwt_window_manager_get_events(WwtWindowManager *self) {
 static void dispose(GObject *obj) {
     WwtWindowManager *self = WWT_WINDOW_MANAGER(obj);
 
-    if (self->events) {
+    if(self->events) {
         window_manager_events_destroy(self->events);
         self->events = NULL;
     }
 
-    if (self->spec) {
+    if(self->spec) {
         window_manager_spec_destroy(self->spec);
         self->spec = NULL;
     }
@@ -104,11 +104,11 @@ static void wwt_window_manager_class_init(WwtWindowManagerClass *klass) {
  * @return The fully created window manager instance
  */
 WwtWindowManager *window_manager_default(WwtApp *app, WindowManagerId wm_id) {
-    if (init_status == WM_INIT_STATUS_FAILED) {
+    if(init_status == WM_INIT_STATUS_FAILED) {
         return NULL;
     }
 
-    if (instance && init_status == WM_INIT_STATUS_SUCCESS) {
+    if(instance && init_status == WM_INIT_STATUS_SUCCESS) {
         return instance;
     }
 
@@ -117,7 +117,7 @@ WwtWindowManager *window_manager_default(WwtApp *app, WindowManagerId wm_id) {
     self->id = wm_id;
     self->spec = window_manager_spec_create(app);
 
-    if (!self->spec) {
+    if(!self->spec) {
         init_status = WM_INIT_STATUS_FAILED;
         g_object_unref(self);
         return NULL;
@@ -125,7 +125,7 @@ WwtWindowManager *window_manager_default(WwtApp *app, WindowManagerId wm_id) {
 
     self->events = window_manager_events_create(self->spec);
 
-    if (!self->events) {
+    if(!self->events) {
         init_status = WM_INIT_STATUS_FAILED;
         g_object_unref(self);
         return NULL;

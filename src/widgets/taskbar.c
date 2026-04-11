@@ -37,26 +37,26 @@ void wwt_taskbar_apply_class_names(
 ) {
     GtkStyleContext *ctx = gtk_widget_get_style_context(GTK_WIDGET(self));
 
-    if (tab_len == 0) {
+    if(tab_len == 0) {
         gtk_style_context_add_class(ctx, TASKBAR_CLASS_NAME_EMPTY);
 
     } else {
         gtk_style_context_remove_class(ctx, TASKBAR_CLASS_NAME_EMPTY);
     }
 
-    if (tab_len == 1) {
+    if(tab_len == 1) {
         gtk_style_context_add_class(ctx, TASKBAR_CLASS_NAME_SINGLE);
     } else {
         gtk_style_context_remove_class(ctx, TASKBAR_CLASS_NAME_SINGLE);
     }
 
-    if (overflow_start) {
+    if(overflow_start) {
         gtk_style_context_add_class(ctx, TASKBAR_CLASS_NAME_OVERFLOW_START);
     } else {
         gtk_style_context_remove_class(ctx, TASKBAR_CLASS_NAME_OVERFLOW_START);
     }
 
-    if (overflow_end) {
+    if(overflow_end) {
         gtk_style_context_add_class(ctx, TASKBAR_CLASS_NAME_OVERFLOW_END);
     } else {
         gtk_style_context_remove_class(ctx, TASKBAR_CLASS_NAME_OVERFLOW_END);
@@ -70,9 +70,9 @@ void wwt_taskbar_apply_class_names(
  * @return The focused windows index
  */
 static int get_focused_index(GPtrArray *wins) {
-    for (guint i = 0; i < wins->len; i++) {
+    for(guint i = 0; i < wins->len; i++) {
         WindowManagerWindow *win = g_ptr_array_index(wins, i);
-        if (win->focused) {
+        if(win->focused) {
             return i;
         }
     }
@@ -93,13 +93,13 @@ void wwt_taskbar_populate_tabs(WindowManagerData *wm_data, gpointer user_data) {
 
     GPtrArray *wins;
 
-    if (output) {
+    if(output) {
         wins = window_manager_data_get_windows_on_output(wm_data, output);
     } else {
         wins = window_manager_data_get_windows_on_focused(wm_data);
     }
 
-    if (!wins) {
+    if(!wins) {
         return;
     }
 
@@ -107,16 +107,16 @@ void wwt_taskbar_populate_tabs(WindowManagerData *wm_data, gpointer user_data) {
     int start = 0;
     int end = wins->len;
 
-    if (max_tabs > 0 && (int)wins->len > max_tabs) {
+    if(max_tabs > 0 && (int)wins->len > max_tabs) {
         start = focused_index - max_tabs / 2;
         end = start + max_tabs;
 
-        if (start < 0) {
+        if(start < 0) {
             start = 0;
             end = max_tabs;
         }
 
-        if (end > (int)wins->len) {
+        if(end > (int)wins->len) {
             end = wins->len;
             start = end - max_tabs;
         }
@@ -125,10 +125,10 @@ void wwt_taskbar_populate_tabs(WindowManagerData *wm_data, gpointer user_data) {
     GList *children = gtk_container_get_children(GTK_CONTAINER(self));
     GList *child = children;
 
-    for (guint i = start; i < end; i++) {
+    for(guint i = start; i < end; i++) {
         WindowManagerWindow *win = g_ptr_array_index(wins, i);
 
-        if (child == NULL) {
+        if(child == NULL) {
             WwtTab *tab = wwt_tab_new(
                 self->app,
                 win->id,
@@ -156,12 +156,12 @@ void wwt_taskbar_populate_tabs(WindowManagerData *wm_data, gpointer user_data) {
             );
         }
 
-        if (child) {
+        if(child) {
             child = child->next;
         }
     }
 
-    while (child != NULL) {
+    while(child != NULL) {
         GList *next = child->next;
         gtk_container_remove(GTK_CONTAINER(self), GTK_WIDGET(child->data));
         child = next;

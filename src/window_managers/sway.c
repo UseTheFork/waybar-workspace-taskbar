@@ -20,13 +20,13 @@
 static int events_constructor() {
     const char *socket_path = getenv("SWAYSOCK");
 
-    if (!socket_path) {
+    if(!socket_path) {
         return -1;
     }
 
     int fd = socket_connect(socket_path);
 
-    if (fd < 0) {
+    if(fd < 0) {
         return fd;
     }
 
@@ -67,11 +67,11 @@ static void events_destructor(int fd, FILE *socket_file) {
 static gboolean events_reader(FILE *socket_file, WindowManagerEvent *event) {
     char header[SWAY_HEADER_LEN];
 
-    if (fread(header, 1, SWAY_HEADER_LEN, socket_file) != SWAY_HEADER_LEN) {
+    if(fread(header, 1, SWAY_HEADER_LEN, socket_file) != SWAY_HEADER_LEN) {
         return FALSE;
     }
 
-    if (memcmp(header, SWAY_MAGIC, SWAY_MAGIC_LEN) != 0) {
+    if(memcmp(header, SWAY_MAGIC, SWAY_MAGIC_LEN) != 0) {
         return FALSE;
     }
 
@@ -79,12 +79,12 @@ static gboolean events_reader(FILE *socket_file, WindowManagerEvent *event) {
     memcpy(&payload_len, header + SWAY_MAGIC_LEN, 4);
     memcpy(&msg_type, header + SWAY_MAGIC_LEN + 4, 4);
 
-    if ((size_t)payload_len + 1 > event->msg_size) {
+    if((size_t)payload_len + 1 > event->msg_size) {
         event->msg = realloc(event->msg, payload_len + 1);
         event->msg_size = payload_len + 1;
     }
 
-    if (fread(event->msg, 1, payload_len, socket_file) != payload_len) {
+    if(fread(event->msg, 1, payload_len, socket_file) != payload_len) {
         return FALSE;
     }
 
@@ -98,19 +98,19 @@ static gboolean events_reader(FILE *socket_file, WindowManagerEvent *event) {
  * Checks if the event is an appropriate event to fire on
  *
  * @param event The event to check
+ * @return TRUE if should fire events else FALSE
  */
 static gboolean events_validator(WindowManagerEvent *event) {
     JsonParser *parser = create_json_parser(event->msg);
     JsonNode *root = json_parser_get_root(parser);
     JsonObject *root_obj = json_node_get_object(root);
 
-    if (json_object_has_member(root_obj, "change")) {
+    if(json_object_has_member(root_obj, "change")) {
         const gchar *change = json_object_get_string_member(root_obj, "change");
 
-        if (strcmp("title", change) == 0 || strcmp("focus", change) == 0 ||
+        if(strcmp("title", change) == 0 || strcmp("focus", change) == 0 ||
             strcmp("new", change) == 0 || strcmp("close", change) == 0 ||
             strcmp("empty", change) == 0 || strcmp("floating", change) == 0) {
-
             g_object_unref(parser);
             return TRUE;
         }
@@ -162,21 +162,20 @@ static void walk_tree(
     JsonObject *node,
     int workspace_id
 ) {
-    if (!node) {
+    if(!node) {
         return;
     }
 
     const char *type = json_object_get_string_member(node, "type");
 
     gint64 pid = 0;
-    if (json_object_has_member(node, "pid")) {
+    if(json_object_has_member(node, "pid")) {
         pid = json_object_get_int_member(node, "pid");
     }
 
     // It's a real window if type=con and pid exists and nodes is empty
-    if (type && pid &&
+    if(type && pid &&
         (strcmp(type, "con") == 0 || strcmp(type, "floating_con") == 0)) {
-
         gint64 id = json_object_get_int_member(node, "id");
         const gchar *name = json_object_get_string_member(node, "name");
         const gchar *app_id = json_object_get_string_member(node, "app_id");
@@ -192,7 +191,7 @@ static void walk_tree(
         JsonObject *window_rect =
             json_object_get_object_member(node, "window_rect");
 
-        if (window_rect) {
+        if(window_rect) {
             x = json_object_get_int_member(window_rect, "x");
             y = json_object_get_int_member(window_rect, "y");
         }
@@ -210,16 +209,16 @@ static void walk_tree(
             y
         );
 
-        if (focused) {
+        if(focused) {
             window_manager_data_set_focused_workspace(wm_data, workspace_id);
         }
     }
 
     JsonArray *nodes = json_object_get_array_member(node, "nodes");
 
-    if (nodes) {
+    if(nodes) {
         guint nodes_len = json_array_get_length(nodes);
-        for (guint i = 0; i < nodes_len; i++) {
+        for(guint i = 0; i < nodes_len; i++) {
             JsonObject *child = json_array_get_object_element(nodes, i);
             walk_tree(wm_data, child, workspace_id);
         }
@@ -228,10 +227,10 @@ static void walk_tree(
     JsonArray *floating_nodes =
         json_object_get_array_member(node, "floating_nodes");
 
-    if (floating_nodes) {
+    if(floating_nodes) {
         guint floating_len = json_array_get_length(floating_nodes);
 
-        for (guint i = 0; i < floating_len; i++) {
+        for(guint i = 0; i < floating_len; i++) {
             JsonObject *child =
                 json_array_get_object_element(floating_nodes, i);
             walk_tree(wm_data, child, workspace_id);
@@ -250,13 +249,13 @@ static WindowManagerData *data_getter() {
     WindowManagerData *wm_data = window_manager_data_create();
 
     char *json_str = cmd_output("swaymsg -t get_tree");
-    if (!json_str) {
+    if(!json_str) {
         window_manager_data_destroy(wm_data);
         return NULL;
     }
 
     JsonParser *parser = create_json_parser(json_str);
-    if (!parser) {
+    if(!parser) {
         g_free(json_str);
         window_manager_data_destroy(wm_data);
         return NULL;
@@ -265,7 +264,7 @@ static WindowManagerData *data_getter() {
     JsonNode *root = json_parser_get_root(parser);
     JsonObject *root_obj = json_node_get_object(root);
     JsonArray *outputs = json_object_get_array_member(root_obj, "nodes");
-    if (!outputs) {
+    if(!outputs) {
         g_object_unref(parser);
         g_free(json_str);
         window_manager_data_destroy(wm_data);
@@ -273,10 +272,10 @@ static WindowManagerData *data_getter() {
     }
 
     guint outputs_len = json_array_get_length(outputs);
-    for (guint i = 0; i < outputs_len; i++) {
+    for(guint i = 0; i < outputs_len; i++) {
         JsonObject *output = json_array_get_object_element(outputs, i);
 
-        if (!json_object_has_member(output, "current_workspace")) {
+        if(!json_object_has_member(output, "current_workspace")) {
             continue;
         }
 
@@ -285,21 +284,21 @@ static WindowManagerData *data_getter() {
 
         const gchar *output_name =
             json_object_get_string_member(output, "name");
-        if (!output_name) {
+        if(!output_name) {
             continue;
         }
 
         JsonArray *nodes = json_object_get_array_member(output, "nodes");
-        if (!nodes) {
+        if(!nodes) {
             continue;
         }
 
         guint nodes_len = json_array_get_length(nodes);
-        for (guint j = 0; j < nodes_len; j++) {
+        for(guint j = 0; j < nodes_len; j++) {
             JsonObject *ws = json_array_get_object_element(nodes, j);
             const gchar *ws_name = json_object_get_string_member(ws, "name");
 
-            if (ws_name && strcmp(ws_name, current_ws) != 0) {
+            if(ws_name && strcmp(ws_name, current_ws) != 0) {
                 continue;
             }
 

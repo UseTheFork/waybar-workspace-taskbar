@@ -36,21 +36,21 @@ G_DEFINE_TYPE(WwtTab, wwt_tab, GTK_TYPE_BUTTON);
 static void apply_class_names(WwtTab *self) {
     GtkStyleContext *ctx = gtk_widget_get_style_context(GTK_WIDGET(self));
 
-    if (self->focused) {
+    if(self->focused) {
         gtk_style_context_add_class(ctx, TAB_CLASS_NAME_FOCUSED);
 
     } else {
         gtk_style_context_remove_class(ctx, TAB_CLASS_NAME_FOCUSED);
     }
 
-    if (self->floating) {
+    if(self->floating) {
         gtk_style_context_add_class(ctx, TAB_CLASS_NAME_FLOATING);
 
     } else {
         gtk_style_context_remove_class(ctx, TAB_CLASS_NAME_FLOATING);
     }
 
-    if (self->urgent) {
+    if(self->urgent) {
         gtk_style_context_add_class(ctx, TAB_CLASS_NAME_URGENT);
 
     } else {
@@ -65,13 +65,13 @@ static void apply_class_names(WwtTab *self) {
  * @param max_len The max characters for the string to be including elipsis
  */
 static void truncate_title(gchar *title, int max_len) {
-    if (max_len < TITLE_MIN_CHARS) {
+    if(max_len < TITLE_MIN_CHARS) {
         return;
     }
 
     int len = strlen(title);
 
-    if (len > max_len && len > 3) {
+    if(len > max_len && len > 3) {
         title[max_len] = '\0';
         title[max_len - 1] = '.';
         title[max_len - 2] = '.';
@@ -89,13 +89,13 @@ static void truncate_title(gchar *title, int max_len) {
 static gboolean set_btn_icon(WwtTab *self) {
     GDesktopAppInfo *info = g_desktop_app_info_new(self->app_id);
 
-    if (!info) {
+    if(!info) {
         gchar *desktop_id = g_strdup_printf("%s.desktop", self->app_id);
         info = g_desktop_app_info_new(desktop_id);
         g_free(desktop_id);
     }
 
-    if (info) {
+    if(info) {
         GIcon *icon = g_app_info_get_icon(G_APP_INFO(info));
         GtkWidget *image = gtk_image_new_from_gicon(icon, GTK_ICON_SIZE_BUTTON);
         gtk_button_set_image(GTK_BUTTON(self), image);
@@ -119,12 +119,12 @@ static void setup_title_and_icon(WwtTab *self) {
     gboolean show_icon = wwt_config_get_show_icon(config);
     int title_max_chars = wwt_config_get_title_max_chars(config);
 
-    if (show_icon) {
+    if(show_icon) {
         set_btn_icon(self);
         gtk_button_set_always_show_image(GTK_BUTTON(self), TRUE);
     }
 
-    if (show_title) {
+    if(show_title) {
         truncate_title(self->title, title_max_chars);
         gtk_button_set_label(GTK_BUTTON(self), self->title);
     }
@@ -155,19 +155,19 @@ static gboolean on_button_press(
         window_manager_spec_get_click_handler(spec, WM_CLICK_FLOAT);
 
     // Left click
-    if (event->button == 1) {
+    if(event->button == 1) {
         window_focus(tab->win_id);
         return TRUE;
     }
 
     // Middle click
-    if (event->button == 2) {
+    if(event->button == 2) {
         window_float(tab->win_id);
         return TRUE; // stop propagation
     }
 
     // Right click
-    if (event->button == 3) {
+    if(event->button == 3) {
         window_close(tab->win_id);
         return TRUE;
     }

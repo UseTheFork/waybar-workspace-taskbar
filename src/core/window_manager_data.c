@@ -29,7 +29,7 @@ void window_manager_data_set_focused_workspace(
     WindowManagerWorkspace *ws =
         g_hash_table_lookup(self->workspaces, GINT_TO_POINTER(id));
 
-    if (!ws) {
+    if(!ws) {
         return;
     }
 
@@ -99,7 +99,7 @@ GPtrArray *window_manager_data_get_windows_on_output(
         (gpointer)output
     );
 
-    if (!ws) {
+    if(!ws) {
         return NULL;
     }
 
@@ -113,7 +113,7 @@ GPtrArray *window_manager_data_get_windows_on_output(
  * @return The windows array or NULL if not found
  */
 GPtrArray *window_manager_data_get_windows_on_focused(WindowManagerData *self) {
-    if (self->focused_workspace_id < 0) {
+    if(self->focused_workspace_id < 0) {
         return NULL;
     }
 
@@ -122,7 +122,7 @@ GPtrArray *window_manager_data_get_windows_on_focused(WindowManagerData *self) {
         GINT_TO_POINTER(self->focused_workspace_id)
     );
 
-    if (!ws) {
+    if(!ws) {
         return NULL;
     }
 
@@ -185,7 +185,7 @@ gboolean window_manager_data_window_create(
     WindowManagerWorkspace *ws =
         g_hash_table_lookup(self->workspaces, GINT_TO_POINTER(ws_id));
 
-    if (!ws) {
+    if(!ws) {
         return FALSE;
     }
 
@@ -226,7 +226,7 @@ gboolean window_manager_data_workspace_create(
     ws->focused = focused;
     ws->output = g_strdup(output);
 
-    if (focused) {
+    if(focused) {
         self->focused_workspace_id = id;
     }
 
@@ -254,7 +254,7 @@ static void table_items_destroy_notify(gpointer data) {
  * @param self
  */
 void window_manager_data_destroy(WindowManagerData *self) {
-    if (self->workspaces) {
+    if(self->workspaces) {
         g_hash_table_destroy(self->workspaces);
         self->workspaces = NULL;
     }

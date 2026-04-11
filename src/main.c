@@ -25,7 +25,7 @@ void *wbcffi_init(
  * @param instance The app instance
  */
 void wbcffi_deinit(void *instance) {
-    if (instance) {
+    if(instance) {
         g_object_unref(instance);
     }
 }

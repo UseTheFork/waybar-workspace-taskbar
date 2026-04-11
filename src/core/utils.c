@@ -26,7 +26,7 @@ int cmd_send(const char *cmd) {
 char *cmd_output(const char *cmd) {
     FILE *fp = popen(cmd, "r");
 
-    if (!fp) {
+    if(!fp) {
         return NULL;
     }
 
@@ -35,10 +35,10 @@ char *cmd_output(const char *cmd) {
     size_t len = 0;
     char tmp[256];
 
-    while (fgets(tmp, sizeof(tmp), fp)) {
+    while(fgets(tmp, sizeof(tmp), fp)) {
         size_t chunk = strlen(tmp);
 
-        if (len + chunk + 1 > size) {
+        if(len + chunk + 1 > size) {
             size *= 2;
             buf = g_realloc(buf, size);
         }
@@ -62,7 +62,7 @@ char *cmd_output(const char *cmd) {
 int socket_connect(const char *socket_path) {
     int fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
-    if (fd < 0) {
+    if(fd < 0) {
         perror("socket");
         return -1;
     }
@@ -71,7 +71,7 @@ int socket_connect(const char *socket_path) {
     addr.sun_family = AF_UNIX;
     strncpy(addr.sun_path, socket_path, sizeof(addr.sun_path) - 1);
 
-    if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+    if(connect(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
         perror("connect");
         close(fd);
         return -1;
@@ -91,7 +91,7 @@ JsonParser *create_json_parser(const char *json_str) {
     GError *error = NULL;
     json_parser_load_from_data(parser, json_str, -1, &error);
 
-    if (error) {
+    if(error) {
         g_warning("Parse error: %s", error->message);
         g_error_free(error);
         g_object_unref(parser);

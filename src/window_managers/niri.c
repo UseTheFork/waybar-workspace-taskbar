@@ -15,7 +15,7 @@
 static int events_constructor() {
     const char *socket_path = getenv("NIRI_SOCKET");
 
-    if (!socket_path) {
+    if(!socket_path) {
         return -1;
     }
 
@@ -46,7 +46,7 @@ static void events_destructor(int fd, FILE *socket_file) {
  * @return TRUE if should emit the event else FALSE
  */
 static gboolean events_reader(FILE *socket_file, WindowManagerEvent *event) {
-    if (getline(&event->msg, &event->msg_size, socket_file) <= 0) {
+    if(getline(&event->msg, &event->msg_size, socket_file) <= 0) {
         clearerr(socket_file);
         return FALSE;
     }
@@ -60,13 +60,14 @@ static gboolean events_reader(FILE *socket_file, WindowManagerEvent *event) {
  * Checks if the event is an appropriate event to fire on
  *
  * @param event The event to check
+ * @return TRUE if should fire events else FALSE
  */
 static gboolean events_validator(WindowManagerEvent *event) {
     JsonParser *parser = create_json_parser(event->msg);
     JsonNode *root = json_parser_get_root(parser);
     JsonObject *root_obj = json_node_get_object(root);
 
-    if (json_object_has_member(root_obj, "WindowOpenedOrChanged") ||
+    if(json_object_has_member(root_obj, "WindowOpenedOrChanged") ||
         json_object_has_member(root_obj, "WindowClosed") ||
         json_object_has_member(root_obj, "WindowLayoutsChanged") ||
         json_object_has_member(root_obj, "WorkspacesChanged") ||
@@ -75,7 +76,6 @@ static gboolean events_validator(WindowManagerEvent *event) {
         json_object_has_member(root_obj, "WorkspaceActiveWindowChanged") ||
         json_object_has_member(root_obj, "WorkspaceActiveWindowChanged") ||
         json_object_has_member(root_obj, "OverviewOpenedOrClosed")) {
-
         g_object_unref(parser);
         return TRUE;
     }
@@ -129,7 +129,7 @@ static int should_swap(gconstpointer a, gconstpointer b) {
     const WindowManagerWindow *cur = *(const WindowManagerWindow **)a;
     const WindowManagerWindow *prev = *(const WindowManagerWindow **)b;
 
-    if (cur->x != prev->x) {
+    if(cur->x != prev->x) {
         return cur->x - prev->x;
     }
     return cur->y - prev->y;
@@ -146,13 +146,13 @@ static WindowManagerData *data_getter() {
     WindowManagerData *wm_data = window_manager_data_create();
 
     char *ws_json = cmd_output("niri msg -j workspaces");
-    if (!ws_json) {
+    if(!ws_json) {
         window_manager_data_destroy(wm_data);
         return NULL;
     }
 
     JsonParser *ws_parser = create_json_parser(ws_json);
-    if (!ws_parser) {
+    if(!ws_parser) {
         g_free(ws_json);
         window_manager_data_destroy(wm_data);
         return NULL;
@@ -160,7 +160,7 @@ static WindowManagerData *data_getter() {
 
     JsonNode *ws_root = json_parser_get_root(ws_parser);
     JsonArray *workspaces = json_node_get_array(ws_root);
-    if (!workspaces) {
+    if(!workspaces) {
         g_object_unref(ws_parser);
         g_free(ws_json);
         window_manager_data_destroy(wm_data);
@@ -168,11 +168,11 @@ static WindowManagerData *data_getter() {
     }
 
     guint ws_len = json_array_get_length(workspaces);
-    for (guint i = 0; i < ws_len; i++) {
+    for(guint i = 0; i < ws_len; i++) {
         JsonObject *ws = json_array_get_object_element(workspaces, i);
         gboolean is_active = json_object_get_boolean_member(ws, "is_active");
 
-        if (!is_active) {
+        if(!is_active) {
             continue;
         }
 
@@ -189,7 +189,7 @@ static WindowManagerData *data_getter() {
     }
 
     char *win_json = cmd_output("niri msg -j windows");
-    if (!win_json) {
+    if(!win_json) {
         g_object_unref(ws_parser);
         g_free(ws_json);
         window_manager_data_destroy(wm_data);
@@ -197,7 +197,7 @@ static WindowManagerData *data_getter() {
     }
 
     JsonParser *win_parser = create_json_parser(win_json);
-    if (!win_parser) {
+    if(!win_parser) {
         g_object_unref(ws_parser);
         g_free(ws_json);
         g_free(win_json);
@@ -207,7 +207,7 @@ static WindowManagerData *data_getter() {
 
     JsonNode *win_root = json_parser_get_root(win_parser);
     JsonArray *windows = json_node_get_array(win_root);
-    if (!windows) {
+    if(!windows) {
         g_object_unref(win_parser);
         g_object_unref(ws_parser);
         g_free(win_json);
@@ -217,7 +217,7 @@ static WindowManagerData *data_getter() {
     }
 
     guint win_len = json_array_get_length(windows);
-    for (guint i = 0; i < win_len; i++) {
+    for(guint i = 0; i < win_len; i++) {
         JsonObject *win = json_array_get_object_element(windows, i);
 
         gint64 id = json_object_get_int_member(win, "id");
@@ -235,15 +235,15 @@ static WindowManagerData *data_getter() {
         gint x = 0, y = 0;
         JsonNode *layout_node = json_object_get_member(win, "layout");
 
-        if (layout_node && !json_node_is_null(layout_node)) {
+        if(layout_node && !json_node_is_null(layout_node)) {
             JsonObject *layout = json_node_get_object(layout_node);
             JsonNode *pos_node =
                 json_object_get_member(layout, "pos_in_scrolling_layout");
 
-            if (pos_node && !json_node_is_null(pos_node)) {
+            if(pos_node && !json_node_is_null(pos_node)) {
                 JsonArray *pos = json_node_get_array(pos_node);
 
-                if (pos && json_array_get_length(pos) >= 2) {
+                if(pos && json_array_get_length(pos) >= 2) {
                     x = (gint)json_array_get_int_element(pos, 0);
                     y = (gint)json_array_get_int_element(pos, 1);
                 }

@@ -16,7 +16,7 @@ static int events_constructor() {
     const char *his = getenv("HYPRLAND_INSTANCE_SIGNATURE");
     const char *xdg_runtime = getenv("XDG_RUNTIME_DIR");
 
-    if (!his || !xdg_runtime) {
+    if(!his || !xdg_runtime) {
         fprintf(stderr, "Missing environment variables.\n");
         return -1;
     }
@@ -54,7 +54,7 @@ static void events_destructor(int fd, FILE *socket_file) {
  * @return TRUE if should emit the event else FALSE
  */
 static gboolean events_reader(FILE *socket_file, WindowManagerEvent *event) {
-    if (getline(&event->msg, &event->msg_size, socket_file) <= 0) {
+    if(getline(&event->msg, &event->msg_size, socket_file) <= 0) {
         clearerr(socket_file);
         return FALSE;
     }
@@ -68,9 +68,10 @@ static gboolean events_reader(FILE *socket_file, WindowManagerEvent *event) {
  * Checks if the event is an appropriate event to fire on
  *
  * @param event The event to check
+ * @return TRUE if should fire events else FALSE
  */
 static gboolean events_validator(WindowManagerEvent *event) {
-    if (strncmp(event->msg, "windowtitle>>", strlen("windowtitle>>")) == 0 ||
+    if(strncmp(event->msg, "windowtitle>>", strlen("windowtitle>>")) == 0 ||
         strncmp(event->msg, "workspace>>", strlen("workspace>>")) == 0 ||
         strncmp(event->msg, "activewindow>>", strlen("activewindow>>")) == 0 ||
         strncmp(event->msg, "closewindow>>", strlen("closewindow>>")) == 0 ||
@@ -124,7 +125,7 @@ static int should_swap(gconstpointer a, gconstpointer b) {
     const WindowManagerWindow *cur = *(const WindowManagerWindow **)a;
     const WindowManagerWindow *prev = *(const WindowManagerWindow **)b;
 
-    if (cur->x != prev->x) {
+    if(cur->x != prev->x) {
         return cur->x - prev->x;
     }
     return cur->y - prev->y;
@@ -141,13 +142,13 @@ static WindowManagerData *data_getter() {
     WindowManagerData *wm_data = window_manager_data_create();
 
     char *batch_json = cmd_output("hyprctl --batch \"clients; monitors\" -j");
-    if (!batch_json) {
+    if(!batch_json) {
         window_manager_data_destroy(wm_data);
         return NULL;
     }
 
     char *split = strstr(batch_json, "\n\n");
-    if (!split) {
+    if(!split) {
         g_free(batch_json);
         window_manager_data_destroy(wm_data);
         return NULL;
@@ -158,7 +159,7 @@ static WindowManagerData *data_getter() {
     char *monitors_json = split + 2;
 
     JsonParser *monitors_parser = create_json_parser(monitors_json);
-    if (!monitors_parser) {
+    if(!monitors_parser) {
         g_free(batch_json);
         window_manager_data_destroy(wm_data);
         return NULL;
@@ -168,7 +169,7 @@ static WindowManagerData *data_getter() {
     JsonArray *monitors = json_node_get_array(monitors_root);
     guint monitors_len = json_array_get_length(monitors);
 
-    for (guint i = 0; i < monitors_len; i++) {
+    for(guint i = 0; i < monitors_len; i++) {
         JsonObject *monitor = json_array_get_object_element(monitors, i);
         const gchar *name = json_object_get_string_member(monitor, "name");
         gboolean focused = json_object_get_boolean_member(monitor, "focused");
@@ -181,7 +182,7 @@ static WindowManagerData *data_getter() {
     g_object_unref(monitors_parser);
 
     JsonParser *clients_parser = create_json_parser(clients_json);
-    if (!clients_parser) {
+    if(!clients_parser) {
         g_free(batch_json);
         window_manager_data_destroy(wm_data);
         return NULL;
@@ -191,11 +192,11 @@ static WindowManagerData *data_getter() {
     JsonArray *clients = json_node_get_array(clients_root);
     guint clients_len = json_array_get_length(clients);
 
-    for (guint i = 0; i < clients_len; i++) {
+    for(guint i = 0; i < clients_len; i++) {
         JsonObject *client = json_array_get_object_element(clients, i);
         JsonObject *ws = json_object_get_object_member(client, "workspace");
 
-        if (!ws) {
+        if(!ws) {
             continue;
         }
 
