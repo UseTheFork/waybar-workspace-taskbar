@@ -26,7 +26,8 @@ typedef enum {
     WM_ID_HYPRLAND
 } WindowManagerId;
 
-WwtWindowManager *window_manager_default(WwtApp *app, WindowManagerId id);
+WwtWindowManager *wwt_window_manager_default(WindowManagerId id);
+WwtWindowManager *wwt_window_manager_instance();
 WindowManagerSpec *wwt_window_manager_get_spec(WwtWindowManager *self);
 WindowManagerEvents *wwt_window_manager_get_events(WwtWindowManager *self);
 

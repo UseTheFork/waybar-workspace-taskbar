@@ -1,8 +1,6 @@
 #include "window_manager.h"
 #include "window_manager_events.h"
 #include "window_manager_spec.h"
-#include <fcntl.h>
-#include <sys/poll.h>
 
 #define WM_EVENTS_POLLING_TIMEOUT 20
 #define WM_EVENTS_DEBOUNCE_TIMEOUT 20
@@ -66,6 +64,11 @@ static void dispose(GObject *obj) {
         self->spec = NULL;
     }
 
+    if(instance) {
+        instance = NULL;
+        init_status = WM_INIT_STATUS_PENDING;
+    }
+
     G_OBJECT_CLASS(wwt_window_manager_parent_class)->dispose(obj);
 }
 
@@ -97,25 +100,36 @@ static void wwt_window_manager_class_init(WwtWindowManagerClass *klass) {
 }
 
 /**
+ * Gets the already created instance
+ *
+ * @return The window manager instance or NULL (Caller does not hold a
+ * reference)
+ */
+WwtWindowManager *wwt_window_manager_instance() {
+    return instance;
+}
+
+/**
  * Gets or creates the window manager instance
  *
- * @param app The app instance
  * @param wm_id The name of window manager
- * @return The fully created window manager instance
+ * @return The fully created window manager instance (Caller holds a reference
+ * and must unref when finished)
  */
-WwtWindowManager *window_manager_default(WwtApp *app, WindowManagerId wm_id) {
+WwtWindowManager *wwt_window_manager_default(WindowManagerId wm_id) {
     if(init_status == WM_INIT_STATUS_FAILED) {
         return NULL;
     }
 
     if(instance && init_status == WM_INIT_STATUS_SUCCESS) {
+        g_object_ref(instance);
         return instance;
     }
 
     WwtWindowManager *self = g_object_new(WWT_WINDOW_MANAGER_TYPE, NULL);
 
     self->id = wm_id;
-    self->spec = window_manager_spec_create(app);
+    self->spec = window_manager_spec_create(wm_id);
 
     if(!self->spec) {
         init_status = WM_INIT_STATUS_FAILED;
@@ -131,6 +145,7 @@ WwtWindowManager *window_manager_default(WwtApp *app, WindowManagerId wm_id) {
         return NULL;
     }
 
+    instance = self;
     init_status = WM_INIT_STATUS_SUCCESS;
     return self;
 }

@@ -12,7 +12,7 @@ struct _WwtApp {
     GtkContainer *root_widget;
     WwtTaskbar *taskbar;
     WwtConfig *config;
-    WwtWindowManager *window_manager;
+    WwtWindowManager *window_manager_ref;
 };
 
 G_DEFINE_TYPE(WwtApp, wwt_app, G_TYPE_OBJECT);
@@ -38,16 +38,6 @@ WwtConfig *wwt_app_get_config(WwtApp *self) {
 }
 
 /**
- * Gets the config instance
- *
- * @param self
- * @return The window manager
- */
-WwtWindowManager *wwt_app_get_window_manager(WwtApp *self) {
-    return self->window_manager;
-}
-
-/**
  * Handles obj disposal
  *
  * @param obj The obj struct
@@ -55,8 +45,17 @@ WwtWindowManager *wwt_app_get_window_manager(WwtApp *self) {
 static void dispose(GObject *obj) {
     WwtApp *self = WWT_APP(obj);
 
-    g_clear_object(&self->window_manager);
+    if(self->taskbar) {
+        gtk_container_remove(
+            GTK_CONTAINER(self->root_widget),
+            GTK_WIDGET(self->taskbar)
+        );
+
+        self->taskbar = NULL;
+    }
+
     g_clear_object(&self->config);
+    g_clear_object(&self->window_manager_ref);
 
     G_OBJECT_CLASS(wwt_app_parent_class)->dispose(obj);
 }
@@ -112,8 +111,10 @@ WwtApp *wwt_app_new(
         return NULL;
     }
 
-    self->window_manager = window_manager_default(self, wm_id);
-    if(!self->window_manager) {
+    WwtWindowManager *wm = wwt_window_manager_default(wm_id);
+    self->window_manager_ref = wm;
+
+    if(!wm) {
         g_object_unref(self);
         g_critical(
             "Waybar Workspace Taskbar: error initializing window manager"
@@ -125,13 +126,21 @@ WwtApp *wwt_app_new(
     // Add a container for displaying the tabs
     self->root_widget = init_info->get_root_widget(init_info->obj);
     self->taskbar = wwt_taskbar_new(self);
+
+    if(!self->taskbar) {
+        g_object_unref(self);
+        g_critical("Waybar Workspace Taskbar: error initializing taskbar");
+
+        return NULL;
+    }
+
     gtk_container_add(
         GTK_CONTAINER(self->root_widget),
         GTK_WIDGET(self->taskbar)
     );
 
     // Populate taskbar with tabs
-    WindowManagerSpec *spec = wwt_window_manager_get_spec(self->window_manager);
+    WindowManagerSpec *spec = wwt_window_manager_get_spec(wm);
     WindowManagerDataGetter get_data =
         window_manager_spec_get_data_getter(spec);
 

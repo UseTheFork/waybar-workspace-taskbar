@@ -21,6 +21,5 @@ WwtApp *wwt_app_new(
 
 WwtTaskbar *wwt_app_get_taskbar(WwtApp *self);
 WwtConfig *wwt_app_get_config(WwtApp *self);
-WwtWindowManager *wwt_app_get_window_manager(WwtApp *self);
 
 G_END_DECLS;

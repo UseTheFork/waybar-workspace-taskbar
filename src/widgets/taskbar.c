@@ -88,6 +88,7 @@ static int get_focused_index(GPtrArray *wins) {
 void wwt_taskbar_populate_tabs(WindowManagerData *wm_data, gpointer user_data) {
     WwtTaskbar *self = user_data;
     WwtConfig *config = wwt_app_get_config(self->app);
+
     int max_tabs = wwt_config_get_max_tabs(config);
     const gchar *output = wwt_config_get_output(config);
 
@@ -194,9 +195,17 @@ static void wwt_taskbar_init(WwtTaskbar *self) {
  * Dispose the tabs instance. Gref cleanup.
  *
  * @param obj The stuct obj.
- *
  */
-static void wwt_taskbar_dispose(GObject *obj) {
+static void dispose(GObject *obj) {
+    WwtTaskbar *self = WWT_TASKBAR(obj);
+    WwtWindowManager *wm = wwt_window_manager_instance();
+
+    if(wm) {
+        WindowManagerEvents *events = wwt_window_manager_get_events(wm);
+        window_manager_events_unsubscribe(events, self->events_subscription_id);
+        self->events_subscription_id = -1;
+    }
+
     G_OBJECT_CLASS(wwt_taskbar_parent_class)->dispose(obj);
 }
 
@@ -205,7 +214,7 @@ static void wwt_taskbar_dispose(GObject *obj) {
  *
  * @param object The tabs struct
  */
-static void wwt_taskbar_finalize(GObject *obj) {
+static void finalize(GObject *obj) {
     G_OBJECT_CLASS(wwt_taskbar_parent_class)->finalize(obj);
 }
 
@@ -216,8 +225,8 @@ static void wwt_taskbar_finalize(GObject *obj) {
  */
 static void wwt_taskbar_class_init(WwtTaskbarClass *klass) {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
-    object_class->dispose = wwt_taskbar_dispose;
-    object_class->finalize = wwt_taskbar_finalize;
+    object_class->dispose = dispose;
+    object_class->finalize = finalize;
 }
 
 /**
@@ -236,7 +245,13 @@ WwtTaskbar *wwt_taskbar_new(WwtApp *app) {
         NULL
     );
 
-    WwtWindowManager *wm = wwt_app_get_window_manager(app);
+    WwtWindowManager *wm = wwt_window_manager_instance();
+
+    if(!wm) {
+        g_object_unref(self);
+        return NULL;
+    }
+
     WindowManagerEvents *wm_events = wwt_window_manager_get_events(wm);
     GtkStyleContext *ctx = gtk_widget_get_style_context(GTK_WIDGET(self));
 
@@ -244,7 +259,11 @@ WwtTaskbar *wwt_taskbar_new(WwtApp *app) {
 
     self->app = app;
 
-    window_manager_events_subscribe(wm_events, wwt_taskbar_populate_tabs, self);
+    self->events_subscription_id = window_manager_events_subscribe(
+        wm_events,
+        wwt_taskbar_populate_tabs,
+        self
+    );
 
     return self;
 }

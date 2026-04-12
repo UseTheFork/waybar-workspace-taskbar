@@ -19,6 +19,7 @@ struct _WindowManagerEvents {
     WindowManagerEvent *event;
     WindowManagerSpec *spec;
     WindowManagerEventsSubscription *subs[WM_EVENTS_MAX_CALlBACKS];
+    int sub_count;
 };
 
 /**
@@ -229,6 +230,7 @@ int window_manager_events_subscribe(
             sub->cb = cb;
             sub->user_data = user_data;
             self->subs[i] = sub;
+            self->sub_count++;
 
             return i;
         }
@@ -251,6 +253,7 @@ gboolean window_manager_events_unsubscribe(WindowManagerEvents *self, int id) {
     if(self->subs[id]) {
         g_free(self->subs[id]);
         self->subs[id] = NULL;
+        self->sub_count--;
     }
 
     return TRUE;

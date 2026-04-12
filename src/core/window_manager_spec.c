@@ -1,5 +1,5 @@
 #include "window_manager_spec.h"
-#include "core/config.h"
+#include "core/window_manager.h"
 #include "window_managers/hyprland.h"
 #include "window_managers/niri.h"
 #include "window_managers/sway.h"
@@ -105,10 +105,7 @@ void window_manager_spec_destroy(WindowManagerSpec *self) {
  * @param app The app instance
  * @return The fully created window manager spec
  */
-WindowManagerSpec *window_manager_spec_create(WwtApp *app) {
-    WwtConfig *config = wwt_app_get_config(app);
-    int wm_id = wwt_config_get_wm_id(config);
-
+WindowManagerSpec *window_manager_spec_create(WindowManagerId wm_id) {
     if(wm_id == WM_ID_NIRI) {
         return window_manager_spec_create_niri();
     }

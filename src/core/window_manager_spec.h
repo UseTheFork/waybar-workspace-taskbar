@@ -1,6 +1,6 @@
 #pragma once
 
-#include "app.h"
+#include "core/window_manager.h"
 #include <gtk/gtk.h>
 
 G_BEGIN_DECLS;
@@ -55,7 +55,7 @@ WindowManagerDataGetter window_manager_spec_get_data_getter(
     WindowManagerSpec *self
 );
 
-WindowManagerSpec *window_manager_spec_create(WwtApp *app);
+WindowManagerSpec *window_manager_spec_create(WindowManagerId wm_id);
 void window_manager_spec_destroy(WindowManagerSpec *spec);
 
 G_END_DECLS;

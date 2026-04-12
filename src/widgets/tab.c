@@ -144,9 +144,13 @@ static gboolean on_button_press(
     gpointer user_data
 ) {
     WwtTab *tab = WWT_TAB(widget);
-    WwtWindowManager *wm = wwt_app_get_window_manager(tab->app);
-    WindowManagerSpec *spec = wwt_window_manager_get_spec(wm);
+    WwtWindowManager *wm = wwt_window_manager_instance();
 
+    if(!wm) {
+        return TRUE;
+    }
+
+    WindowManagerSpec *spec = wwt_window_manager_get_spec(wm);
     WindowManagerClickHandler window_focus =
         window_manager_spec_get_click_handler(spec, WM_CLICK_FOCUS);
     WindowManagerClickHandler window_close =
@@ -157,22 +161,19 @@ static gboolean on_button_press(
     // Left click
     if(event->button == 1) {
         window_focus(tab->win_id);
-        return TRUE;
     }
 
     // Middle click
     if(event->button == 2) {
         window_float(tab->win_id);
-        return TRUE; // stop propagation
     }
 
     // Right click
     if(event->button == 3) {
         window_close(tab->win_id);
-        return TRUE;
     }
 
-    return FALSE; // let GtkButton handle click normally
+    return TRUE; // Stop propogation
 }
 
 /**
