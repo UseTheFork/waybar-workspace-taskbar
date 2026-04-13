@@ -139,9 +139,7 @@ static int window_sort(gconstpointer a, gconstpointer b) {
 /**
  * Gets the windows information from the window manager
  *
- * @param app The app instance
- * @param wins An empty array to populate with the window information
- * @return TRUE if successfully fetched windows else FALSE
+ * @return (transfer full): Populated window manager data or NULL on error
  */
 static WindowManagerData *data_getter() {
     WindowManagerData *wm_data = window_manager_data_create();
