@@ -74,7 +74,7 @@ static gboolean events_validator(WindowManagerEvent *event) {
         json_object_has_member(root_obj, "WindowFocusChanged") ||
         json_object_has_member(root_obj, "WorkspaceActivated") ||
         json_object_has_member(root_obj, "WorkspaceActiveWindowChanged") ||
-        json_object_has_member(root_obj, "WorkspaceActiveWindowChanged") ||
+        json_object_has_member(root_obj, "WindowUrgencyChanged") ||
         json_object_has_member(root_obj, "OverviewOpenedOrClosed")) {
         g_object_unref(parser);
         return TRUE;

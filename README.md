@@ -130,10 +130,6 @@ Hyprland
 - Hyprctl doesn't expose urgent status when fetching window information.
 - Hyprland doesn't send an event when toggling floating windows. So window status and sorting will not be updated until you change focus.
 
-Niri
-
-- Urgent status is hit or miss.
-
 ## License
 
 Waybar Workspace Taskbar is licensed under the MIT license. See [LICENSE](https://github.com/stevekanger/waybar-workspace-taskbar/blob/main/LICENSE) for more information.
