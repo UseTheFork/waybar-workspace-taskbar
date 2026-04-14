@@ -12,7 +12,7 @@ struct _WindowManagerData {
 struct _WindowManagerWorkspace {
     int id;
     int focused;
-    char *output;
+    gchar *output;
     GPtrArray *windows;
 };
 
@@ -168,6 +168,8 @@ static void window_manager_workspace_destroy(gpointer data) {
  * @param urgent The urgent status
  * @param x Window position x
  * @param y Window position y
+ * @param sortable A backup sortable value in case you don't want to sort by
+ * window pos
  * @return TRUE if inserted else FALSE
  */
 gboolean window_manager_data_window_create(
@@ -180,7 +182,8 @@ gboolean window_manager_data_window_create(
     int floating,
     int urgent,
     int x,
-    int y
+    int y,
+    int sortable
 ) {
     WindowManagerWorkspace *ws =
         g_hash_table_lookup(self->workspaces, GINT_TO_POINTER(ws_id));
@@ -200,6 +203,7 @@ gboolean window_manager_data_window_create(
     win->urgent = urgent;
     win->x = x;
     win->y = y;
+    win->sortable = sortable;
 
     g_ptr_array_add(ws->windows, win);
 
@@ -213,6 +217,7 @@ gboolean window_manager_data_window_create(
  * @param id The workspace id
  * @param focused Is the workspace focused
  * @param output The output the workspace is on
+ * @param layout The workspace layout
  * @return TRUE if inserted else FALSE
  */
 gboolean window_manager_data_workspace_create(

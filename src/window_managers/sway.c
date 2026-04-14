@@ -221,7 +221,8 @@ static void walk_tree(
             strcmp("floating_con", type) == 0,
             urgent,
             x,
-            y
+            y,
+            0
         );
 
         if(focused) {

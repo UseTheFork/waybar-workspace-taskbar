@@ -263,7 +263,8 @@ static WindowManagerData *data_getter() {
             is_floating,
             is_urgent,
             x,
-            y
+            y,
+            0
         );
     }
 

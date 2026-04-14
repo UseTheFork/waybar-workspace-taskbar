@@ -133,7 +133,12 @@ static int window_sort(gconstpointer a, gconstpointer b) {
         return cur->x - next->x;
     }
 
-    return cur->y - next->y;
+    if(cur->y != next->y) {
+        return cur->y - next->y;
+    }
+
+    // Fallback for monocle layout
+    return cur->sortable - next->sortable;
 }
 
 /**
@@ -144,7 +149,8 @@ static int window_sort(gconstpointer a, gconstpointer b) {
 static WindowManagerData *data_getter() {
     WindowManagerData *wm_data = window_manager_data_create();
 
-    char *batch_json = cmd_output("hyprctl --batch \"clients; monitors\" -j");
+    char *batch_json = cmd_output("hyprctl --batch \"monitors; clients\" -j");
+
     if(!batch_json) {
         window_manager_data_destroy(wm_data);
         return NULL;
@@ -156,10 +162,10 @@ static WindowManagerData *data_getter() {
         window_manager_data_destroy(wm_data);
         return NULL;
     }
-
     *split = '\0';
-    char *clients_json = batch_json;
-    char *monitors_json = split + 2;
+
+    char *monitors_json = batch_json;
+    char *clients_json = split + 2;
 
     JsonParser *monitors_parser = create_json_parser(monitors_json);
     if(!monitors_parser) {
@@ -182,6 +188,7 @@ static WindowManagerData *data_getter() {
 
         window_manager_data_workspace_create(wm_data, ws_id, focused, name);
     }
+
     g_object_unref(monitors_parser);
 
     JsonParser *clients_parser = create_json_parser(clients_json);
@@ -210,6 +217,8 @@ static WindowManagerData *data_getter() {
             json_object_get_int_member(client, "focusHistoryID");
         gint64 ws_id = json_object_get_int_member(ws, "id");
         gboolean floating = json_object_get_boolean_member(client, "floating");
+        const gchar *stable_id =
+            json_object_get_string_member(client, "stableId");
 
         JsonArray *at = json_object_get_array_member(client, "at");
         gint64 x = json_array_get_int_element(at, 0);
@@ -225,7 +234,8 @@ static WindowManagerData *data_getter() {
             floating,
             FALSE,
             x,
-            y
+            y,
+            (int)strtoul(stable_id, NULL, 16)
         );
     }
 

@@ -17,6 +17,7 @@ typedef struct {
     int urgent;
     int x;
     int y;
+    int sortable;
 } WindowManagerWindow;
 
 WindowManagerData *window_manager_data_create();
@@ -38,14 +39,15 @@ gboolean window_manager_data_window_create(
     int floating,
     int urgent,
     int x,
-    int y
+    int y,
+    int sortable
 );
 
 gboolean window_manager_data_workspace_create(
     WindowManagerData *self,
     int id,
     int focused,
-    const char *output
+    const gchar *output
 );
 
 void window_manager_data_sort_windows(
