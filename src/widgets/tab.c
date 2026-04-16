@@ -101,6 +101,8 @@ static gboolean set_btn_icon(WwtTab *self) {
         gtk_button_set_image(GTK_BUTTON(self), image);
         gtk_button_set_always_show_image(GTK_BUTTON(self), TRUE);
         g_object_unref(info);
+    } else {
+        gtk_button_set_image(GTK_BUTTON(self), NULL);
     }
 
     return TRUE;
