@@ -31,7 +31,7 @@ Then clone or dowload the repo and you can simply run
 make
 ```
 
-I'll leave the installation location up to you. You simply need the `.so` file in the build folder.
+I'll leave the installation location up to you. You only need the `.so` file in the build folder.
 
 ```
 cp build/waybar-workspace-taskbar.so /your/desired/location/
@@ -41,7 +41,7 @@ More than likely you would move it to ~/.config/waybar/cffi/
 
 ## Configuration
 
-You need to setup the `cffi/module-name` in your `config.json` file for waybar. Reference [Waybar CFFI Example](https://github.com/Alexays/Waybar/wiki/Module:-CFFI#examples)
+You need to setup the `cffi/module-name` in your `config.json` file for waybar. Reference [Waybar CFFI Example](https://github.com/Alexays/Waybar/wiki/Module:-CFFI#examples).
 
 Minimal example:
 
@@ -69,6 +69,7 @@ Even though your using jsonc waybar doesn't parse out the comments when passing 
 | output          | no       | NULL     | true, false                | The monitor you want to bind to. If no output is set then it defaults to showing the focused workspace.                                               |
 | show_icon       | no       | true     | true, false                | Whether or not you want to show the application icon.                                                                                                 |
 | show_title      | no       | false    | true, false                | Whether or not you want to show the window title.                                                                                                     |
+| show_tooltip    | no       | false    | true, false                | Whether or not you want to show a tooltip when hovering on the tab.                                                                                   |
 | text_align      | no       | "center" | "left", "right", "center"  | Position of the text and icon in the tab.                                                                                                             |
 | max_tabs        | no       | -1       | int                        | Max amount of tabs to show -1 for unlimited. (See css configuration below to show the overflow indicator)                                             |
 | title_max_chars | no       | -1       | int > 3                    | Max amount of characters to show in the title, -1 for unlimited. (Note: this includes elipsis so if you set to 10, 3 of those characters will be ...) |
