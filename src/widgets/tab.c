@@ -113,17 +113,23 @@ static gboolean set_btn_icon(WwtTab *self) {
  *
  * @param self
  */
-static void setup_title_and_icon(WwtTab *self) {
+static void set_title_and_icon(WwtTab *self) {
     WwtApp *app = self->app;
     WwtConfig *config = wwt_app_get_config(app);
 
     gboolean show_title = wwt_config_get_show_title(config);
     gboolean show_icon = wwt_config_get_show_icon(config);
+    gboolean show_tooltip = wwt_config_get_show_tooltip(config);
     int title_max_chars = wwt_config_get_title_max_chars(config);
 
     if(show_icon) {
         set_btn_icon(self);
         gtk_button_set_always_show_image(GTK_BUTTON(self), TRUE);
+    }
+
+    // must be set before truncating the title
+    if(show_tooltip) {
+        gtk_widget_set_tooltip_text(GTK_WIDGET(self), self->title);
     }
 
     if(show_title) {
@@ -267,7 +273,7 @@ void wwt_tab_update(
     self->y = y;
 
     apply_class_names(self);
-    setup_title_and_icon(self);
+    set_title_and_icon(self);
 }
 
 /**
@@ -313,7 +319,7 @@ WwtTab *wwt_tab_new(
     gtk_style_context_add_class(ctx, TAB_CLASS_NAME);
 
     apply_class_names(self);
-    setup_title_and_icon(self);
+    set_title_and_icon(self);
 
     gfloat text_align = wwt_config_get_text_align(config);
     gtk_button_set_alignment(GTK_BUTTON(self), text_align, 0.5);

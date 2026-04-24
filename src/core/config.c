@@ -12,6 +12,7 @@ struct _WwtConfig {
     WindowManagerId window_manager_id;
     gboolean show_title;
     gboolean show_icon;
+    gboolean show_tooltip;
     int max_tabs;
     int title_max_chars;
     char *output;
@@ -73,6 +74,16 @@ gboolean wwt_config_get_show_title(WwtConfig *self) {
  */
 gboolean wwt_config_get_show_icon(WwtConfig *self) {
     return self->show_icon;
+}
+
+/**
+ * Gets the show_tooltip value
+ *
+ * @param self
+ * @return The show_tooltip value
+ */
+int wwt_config_get_show_tooltip(WwtConfig *self) {
+    return self->show_tooltip;
 }
 
 /**
@@ -162,6 +173,16 @@ static void parse_config_entries(
             }
         }
 
+        if(strcmp("show_tooltip", key) == 0) {
+            int show_tooltip = json_node_get_boolean(node);
+
+            if(show_tooltip) {
+                self->show_tooltip = TRUE;
+            } else {
+                self->show_tooltip = FALSE;
+            }
+        }
+
         if(strcmp("show_icon", key) == 0) {
             int show_icon = json_node_get_boolean(node);
 
@@ -240,6 +261,7 @@ static void wwt_config_init(WwtConfig *self) {
     self->output = NULL;
     self->show_icon = TRUE;
     self->show_title = FALSE;
+    self->show_tooltip = FALSE;
     self->title_max_chars = -1;
     self->max_tabs = -1;
     self->text_align = TAB_TEXT_ALIGN_CENTER;
