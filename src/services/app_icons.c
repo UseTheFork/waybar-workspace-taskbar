@@ -133,6 +133,8 @@ void app_icons_destroy(AppIcons *self) {
         g_hash_table_destroy(self->cache);
         self->cache = NULL;
     }
+
+    g_free(self);
 }
 
 /**
@@ -141,7 +143,7 @@ void app_icons_destroy(AppIcons *self) {
  * @return The fully created AppIcons instance (transfer: full)
  */
 AppIcons *app_icons_create() {
-    AppIcons *self = g_malloc0(sizeof(AppIcons));
+    AppIcons *self = g_malloc(sizeof(AppIcons));
     self->cache =
         g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
 
