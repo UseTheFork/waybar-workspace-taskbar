@@ -143,72 +143,6 @@ static gboolean window_manager_events_poll(gpointer user_data) {
 }
 
 /**
- * Create the window manager events
- *
- * @param events_constructor Window manager specific socket connection
- * constructor
- * @param events_reader Window manager specific events reader
- * @return The fully created events instance
- */
-WindowManagerEvents *window_manager_events_create(WindowManagerSpec *spec) {
-    WindowManagerEvents *self = g_malloc0(sizeof(WindowManagerEvents));
-    WindowManagerEventsConstructor events_constructor =
-        window_manager_spec_get_events_constructor(spec);
-
-    int fd = events_constructor();
-
-    self->socket_file = fdopen(fd, "r");
-
-    if(!self->socket_file) {
-        g_free(self);
-        perror("fdopen");
-        close(fd);
-        return NULL;
-    }
-
-    self->spec = spec;
-    self->event = window_manager_event_create();
-    self->poll_fd.fd = fd;
-    self->poll_fd.events = POLLIN;
-    self->timeout_id = g_timeout_add(
-        WM_EVENTS_POLLING_TIMEOUT,
-        window_manager_events_poll,
-        self
-    );
-
-    set_non_block(self->poll_fd.fd);
-
-    return self;
-}
-
-/**
- * Destroy the window manager events
- *
- * @pararm events
- * @param destructor The window manager specific events destructor
- */
-void window_manager_events_destroy(WindowManagerEvents *self) {
-    if(!self) {
-        return;
-    }
-
-    WindowManagerEventsDestructor destructor =
-        window_manager_spec_get_events_destructor(self->spec);
-
-    for(int i = 0; i < WM_EVENTS_MAX_CALlBACKS; ++i) {
-        if(self->subs[i]) {
-            window_manager_events_unsubscribe(self, i);
-        }
-    }
-
-    destructor(self->poll_fd.fd, self->socket_file);
-
-    window_manager_event_destroy(self->event);
-    g_source_remove(self->timeout_id);
-    g_free(self);
-}
-
-/**
  * Subscribe to the window manager events
  *
  * @param self
@@ -257,4 +191,70 @@ gboolean window_manager_events_unsubscribe(WindowManagerEvents *self, int id) {
     }
 
     return TRUE;
+}
+
+/**
+ * Destroy the window manager events
+ *
+ * @pararm events
+ * @param destructor The window manager specific events destructor
+ */
+void window_manager_events_destroy(WindowManagerEvents *self) {
+    if(!self) {
+        return;
+    }
+
+    WindowManagerEventsDestructor destructor =
+        window_manager_spec_get_events_destructor(self->spec);
+
+    for(int i = 0; i < WM_EVENTS_MAX_CALlBACKS; ++i) {
+        if(self->subs[i]) {
+            window_manager_events_unsubscribe(self, i);
+        }
+    }
+
+    destructor(self->poll_fd.fd, self->socket_file);
+
+    window_manager_event_destroy(self->event);
+    g_source_remove(self->timeout_id);
+    g_free(self);
+}
+
+/**
+ * Create the window manager events
+ *
+ * @param events_constructor Window manager specific socket connection
+ * constructor
+ * @param events_reader Window manager specific events reader
+ * @return The fully created events instance
+ */
+WindowManagerEvents *window_manager_events_create(WindowManagerSpec *spec) {
+    WindowManagerEvents *self = g_malloc0(sizeof(WindowManagerEvents));
+    WindowManagerEventsConstructor events_constructor =
+        window_manager_spec_get_events_constructor(spec);
+
+    int fd = events_constructor();
+
+    self->socket_file = fdopen(fd, "r");
+
+    if(!self->socket_file) {
+        g_free(self);
+        perror("fdopen");
+        close(fd);
+        return NULL;
+    }
+
+    self->spec = spec;
+    self->event = window_manager_event_create();
+    self->poll_fd.fd = fd;
+    self->poll_fd.events = POLLIN;
+    self->timeout_id = g_timeout_add(
+        WM_EVENTS_POLLING_TIMEOUT,
+        window_manager_events_poll,
+        self
+    );
+
+    set_non_block(self->poll_fd.fd);
+
+    return self;
 }
