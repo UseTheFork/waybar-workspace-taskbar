@@ -1,4 +1,5 @@
 #include "app.h"
+#include "cache.h"
 #include "config.h"
 #include "wbcffi.h"
 #include "widgets/taskbar.h"
@@ -13,6 +14,7 @@ struct _WwtApp {
     WwtTaskbar *taskbar;
     WwtConfig *config;
     WwtWindowManager *window_manager_ref;
+    WwtCache *cache_ref;
 };
 
 G_DEFINE_TYPE(WwtApp, wwt_app, G_TYPE_OBJECT);
@@ -56,6 +58,7 @@ static void dispose(GObject *obj) {
 
     g_clear_object(&self->config);
     g_clear_object(&self->window_manager_ref);
+    g_clear_object(&self->cache_ref);
 
     G_OBJECT_CLASS(wwt_app_parent_class)->dispose(obj);
 }
@@ -72,7 +75,7 @@ static void finalize(GObject *obj) {
 /**
  * Initialize the app
  *
- * @param wwt The application struct
+ * @param self
  */
 static void wwt_app_init(WwtApp *self) {
 }
@@ -80,7 +83,7 @@ static void wwt_app_init(WwtApp *self) {
 /**
  * Initialized the class instance and methods
  *
- * @param class the class instance
+ * @param class The class instance
  */
 static void wwt_app_class_init(WwtAppClass *klass) {
     G_OBJECT_CLASS(klass)->dispose = dispose;
@@ -108,6 +111,16 @@ WwtApp *wwt_app_new(
 
     if(wm_id == WM_ID_UNSUPPORTED) {
         g_object_unref(self);
+        return NULL;
+    }
+
+    WwtCache *cache = wwt_cache_default();
+    self->cache_ref = cache;
+
+    if(!cache) {
+        g_object_unref(self);
+        g_critical("Waybar Workspace Taskbar: error initializing cache");
+
         return NULL;
     }
 

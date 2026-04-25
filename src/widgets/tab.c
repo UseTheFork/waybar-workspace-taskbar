@@ -1,10 +1,10 @@
 #include "tab.h"
 #include "core/app.h"
+#include "core/cache.h"
 #include "core/config.h"
 #include "core/window_manager.h"
 #include "core/window_manager_spec.h"
 #include <gio/gdesktopappinfo.h>
-#include <stdio.h>
 
 #define TAB_CLASS_NAME "tab"
 #define TAB_CLASS_NAME_FOCUSED "focused"
@@ -80,6 +80,63 @@ static void truncate_title(gchar *title, int max_len) {
 }
 
 /**
+ * Finds the desktop info based on the app_id
+ *
+ * @param app_id The app_id from the window manager
+ * @return the GDesktopAppInfo
+ */
+static GDesktopAppInfo *get_app_info(const gchar *app_id) {
+    GDesktopAppInfo *info = g_desktop_app_info_new(app_id);
+    if(info) {
+        return info;
+    }
+
+    if(!info) {
+        gchar *desktop_id = g_strdup_printf("%s.desktop", app_id);
+        info = g_desktop_app_info_new(desktop_id);
+        g_free(desktop_id);
+    }
+
+    gchar ***results = g_desktop_app_info_search(app_id);
+    if(results && results[0] && results[0][0]) {
+        info = g_desktop_app_info_new(results[0][0]);
+    }
+
+    for(gint i = 0; results && results[i]; i++) {
+        g_strfreev(results[i]);
+    }
+    g_free(results);
+
+    return info;
+}
+
+/**
+ * Gets the button icon either from cache or creates new
+ *
+ * @param self
+ * @return The icon
+ */
+static GIcon *get_btn_icon(WwtTab *self) {
+    WwtCache *cache = wwt_cache_instance();
+    GIcon *cached_icon = wwt_cache_get_icon(cache, self->app_id);
+
+    if(cached_icon) {
+        return cached_icon;
+    }
+
+    GDesktopAppInfo *info = get_app_info(self->app_id);
+    if(!info) {
+        return NULL;
+    }
+
+    GIcon *icon = g_app_info_get_icon(G_APP_INFO(info));
+    wwt_cache_set_icon(cache, self->app_id, icon);
+    g_object_unref(info);
+
+    return icon;
+}
+
+/**
  * Sets the buttons icon. First checks the gdesktopappinfo then goes to gtk
  * image from gicon
  *
@@ -87,20 +144,12 @@ static void truncate_title(gchar *title, int max_len) {
  * @return TRUE if the icon is set else FALSE
  */
 static gboolean set_btn_icon(WwtTab *self) {
-    GDesktopAppInfo *info = g_desktop_app_info_new(self->app_id);
+    GIcon *icon = get_btn_icon(self);
 
-    if(!info) {
-        gchar *desktop_id = g_strdup_printf("%s.desktop", self->app_id);
-        info = g_desktop_app_info_new(desktop_id);
-        g_free(desktop_id);
-    }
-
-    if(info) {
-        GIcon *icon = g_app_info_get_icon(G_APP_INFO(info));
+    if(icon) {
         GtkWidget *image = gtk_image_new_from_gicon(icon, GTK_ICON_SIZE_BUTTON);
         gtk_button_set_image(GTK_BUTTON(self), image);
         gtk_button_set_always_show_image(GTK_BUTTON(self), TRUE);
-        g_object_unref(info);
     } else {
         gtk_button_set_image(GTK_BUTTON(self), NULL);
     }

@@ -75,7 +75,7 @@ static void dispose(GObject *obj) {
 /**
  * Handles object finalization
  *
- * @param obj The app struct
+ * @param obj The struct
  */
 static void finalize(GObject *obj) {
     G_OBJECT_CLASS(wwt_window_manager_parent_class)->finalize(obj);
@@ -84,7 +84,7 @@ static void finalize(GObject *obj) {
 /**
  * Initialize the object
  *
- * @param wwt The application struct
+ * @param self
  */
 static void wwt_window_manager_init(WwtWindowManager *self) {
 }

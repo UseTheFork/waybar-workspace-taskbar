@@ -10,6 +10,7 @@ src_files = files(
   'src/main.c',
   'src/core/app.c',
   'src/core/config.c',
+  'src/core/cache.c',
   'src/core/utils.c',
   'src/core/window_manager.c',
   'src/core/window_manager_data.c',
