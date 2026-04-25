@@ -115,7 +115,6 @@ static void set_title_and_icon(WwtTab *self) {
 
     if(show_icon) {
         set_btn_icon(self);
-        gtk_button_set_always_show_image(GTK_BUTTON(self), TRUE);
     }
 
     // tooltip must be set before truncating the title
