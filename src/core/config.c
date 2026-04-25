@@ -1,7 +1,7 @@
 #include "config.h"
 #include "core/app.h"
-#include "core/window_manager.h"
 #include "json-glib/json-glib.h"
+#include "services/window_manager_spec.h"
 #include "utils.h"
 #include <stdlib.h>
 #include <string.h>

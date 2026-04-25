@@ -1,5 +1,4 @@
 #include "window_manager_spec.h"
-#include "core/window_manager.h"
 #include "window_managers/hyprland.h"
 #include "window_managers/niri.h"
 #include "window_managers/sway.h"

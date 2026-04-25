@@ -1,10 +1,11 @@
 #pragma once
 
 #include "wbcffi.h"
-#include "window_manager.h"
 #include <gtk/gtk.h>
 
 G_BEGIN_DECLS;
+
+typedef enum WindowManagerId WindowManagerId;
 
 #define TAB_TEXT_ALIGN_LEFT 0.0
 #define TAB_TEXT_ALIGN_CENTER 0.5

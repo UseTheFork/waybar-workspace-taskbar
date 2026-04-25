@@ -2,9 +2,9 @@
 #include "common.h"
 #include "core/utils.h"
 #include "core/window_manager_data.h"
-#include "core/window_manager_events.h"
-#include "core/window_manager_spec.h"
 #include "glib.h"
+#include "services/window_manager_events.h"
+#include "services/window_manager_spec.h"
 #include <stdio.h>
 
 /**
@@ -285,6 +285,7 @@ static WindowManagerData *data_getter() {
 WindowManagerSpec *window_manager_spec_create_niri() {
     WindowManagerSpec *spec = g_malloc(sizeof(WindowManagerSpec));
 
+    spec->id = WM_ID_NIRI;
     spec->events_constructor = events_constructor;
     spec->events_destructor = events_destructor;
     spec->events_reader = events_reader;

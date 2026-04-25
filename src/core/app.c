@@ -1,10 +1,9 @@
 #include "app.h"
-#include "cache.h"
 #include "config.h"
+#include "services.h"
+#include "services/window_manager_spec.h"
 #include "wbcffi.h"
 #include "widgets/taskbar.h"
-#include "window_manager.h"
-#include "window_manager_spec.h"
 
 struct _WwtApp {
     GObject parent;
@@ -13,11 +12,20 @@ struct _WwtApp {
     GtkContainer *root_widget;
     WwtTaskbar *taskbar;
     WwtConfig *config;
-    WwtWindowManager *window_manager_ref;
-    WwtCache *cache_ref;
+    WwtServices *services;
 };
 
 G_DEFINE_TYPE(WwtApp, wwt_app, G_TYPE_OBJECT);
+
+/**
+ * Gets the services
+ *
+ * @param self
+ * @return The services
+ */
+WwtServices *wwt_app_get_services(WwtApp *self) {
+    return self->services;
+}
 
 /**
  * Gets the taskbar widget
@@ -57,8 +65,7 @@ static void dispose(GObject *obj) {
     }
 
     g_clear_object(&self->config);
-    g_clear_object(&self->window_manager_ref);
-    g_clear_object(&self->cache_ref);
+    g_clear_object(&self->services);
 
     G_OBJECT_CLASS(wwt_app_parent_class)->dispose(obj);
 }
@@ -104,56 +111,38 @@ WwtApp *wwt_app_new(
     size_t config_entries_len
 ) {
     WwtApp *self = g_object_new(WWT_APP_TYPE, NULL);
-
     self->waybar_module = init_info->obj;
     self->config = wwt_config_new(config_entries, config_entries_len);
-    WindowManagerId wm_id = wwt_config_get_wm_id(self->config);
 
+    WindowManagerId wm_id = wwt_config_get_wm_id(self->config);
     if(wm_id == WM_ID_UNSUPPORTED) {
         g_object_unref(self);
         return NULL;
     }
 
-    WwtCache *cache = wwt_cache_default();
-    self->cache_ref = cache;
-
-    if(!cache) {
+    self->services = wwt_services_default(self->config);
+    if(!self->services) {
         g_object_unref(self);
-        g_critical("Waybar Workspace Taskbar: error initializing cache");
-
+        g_critical("Waybar Workspace Taskbar: error initializing services");
         return NULL;
     }
 
-    WwtWindowManager *wm = wwt_window_manager_default(wm_id);
-    self->window_manager_ref = wm;
-
-    if(!wm) {
-        g_object_unref(self);
-        g_critical(
-            "Waybar Workspace Taskbar: error initializing window manager"
-        );
-
-        return NULL;
-    }
-
-    // Add a container for displaying the tabs
-    self->root_widget = init_info->get_root_widget(init_info->obj);
     self->taskbar = wwt_taskbar_new(self);
-
     if(!self->taskbar) {
         g_object_unref(self);
         g_critical("Waybar Workspace Taskbar: error initializing taskbar");
-
         return NULL;
     }
 
+    self->root_widget = init_info->get_root_widget(init_info->obj);
     gtk_container_add(
         GTK_CONTAINER(self->root_widget),
         GTK_WIDGET(self->taskbar)
     );
 
     // Populate taskbar with tabs
-    WindowManagerSpec *spec = wwt_window_manager_get_spec(wm);
+    WindowManagerSpec *spec =
+        wwt_services_get_window_manager_spec(self->services);
     WindowManagerDataGetter get_data =
         window_manager_spec_get_data_getter(spec);
 

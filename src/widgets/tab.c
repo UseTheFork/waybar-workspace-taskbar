@@ -1,9 +1,9 @@
 #include "tab.h"
 #include "core/app.h"
-#include "core/cache.h"
 #include "core/config.h"
-#include "core/window_manager.h"
-#include "core/window_manager_spec.h"
+#include "core/services.h"
+#include "services/app_icons.h"
+#include "services/window_manager_spec.h"
 #include <gio/gdesktopappinfo.h>
 
 #define TAB_CLASS_NAME "tab"
@@ -29,98 +29,6 @@ struct _WwtTab {
 G_DEFINE_TYPE(WwtTab, wwt_tab, GTK_TYPE_BUTTON);
 
 /**
- * Finds the desktop info based on the app_id
- *
- * @param app_id The app_id from the window manager
- * @return the GDesktopAppInfo
- */
-static GDesktopAppInfo *get_app_info(const gchar *app_id) {
-    GDesktopAppInfo *info = g_desktop_app_info_new(app_id);
-    if(info) {
-        return info;
-    }
-
-    if(!info) {
-        gchar *desktop_id = g_strdup_printf("%s.desktop", app_id);
-        info = g_desktop_app_info_new(desktop_id);
-        g_free(desktop_id);
-    }
-
-    gchar ***results = g_desktop_app_info_search(app_id);
-    if(results && results[0] && results[0][0]) {
-        info = g_desktop_app_info_new(results[0][0]);
-    }
-
-    for(gint i = 0; results && results[i]; i++) {
-        g_strfreev(results[i]);
-    }
-    g_free(results);
-
-    return info;
-}
-
-/**
- * Creates a pixbuf from the GIcon
- *
- * @param icon The GIcon
- * @return The created pixbuf
- */
-static GdkPixbuf *create_icon_pixbuf(GIcon *icon) {
-    GdkPixbuf *pixbuf = NULL;
-    GtkIconTheme *theme = gtk_icon_theme_get_default();
-
-    if(icon) {
-        GtkIconInfo *info = gtk_icon_theme_lookup_by_gicon(
-            theme,
-            icon,
-            16,
-            GTK_ICON_LOOKUP_FORCE_SIZE
-        );
-
-        if(info) {
-            pixbuf = gtk_icon_info_load_icon(info, NULL);
-            g_object_unref(info);
-        }
-    }
-
-    if(!pixbuf) {
-        pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, TRUE, 8, 16, 16);
-        gdk_pixbuf_fill(pixbuf, 0xEBEBEBFF);
-    }
-
-    return pixbuf;
-}
-
-/**
- * Gets the button icon either from cache or creates new
- *
- * @param self
- * @return The icon
- */
-static GdkPixbuf *get_btn_icon(const char *app_id) {
-    WwtCache *cache = wwt_cache_instance();
-    GdkPixbuf *cached = wwt_cache_get_icon(cache, app_id);
-
-    if(cached) {
-        return cached;
-    }
-
-    GDesktopAppInfo *info = get_app_info(app_id);
-    if(!info) {
-        return create_icon_pixbuf(NULL);
-    }
-
-    GIcon *icon = g_app_info_get_icon(G_APP_INFO(info));
-    GdkPixbuf *pixbuf = create_icon_pixbuf(icon);
-    wwt_cache_set_icon(cache, app_id, pixbuf);
-
-    g_object_unref(info);
-    g_object_unref(pixbuf);
-
-    return pixbuf;
-}
-
-/**
  * Sets the buttons icon. First checks the gdesktopappinfo then goes to gtk
  * image from gicon
  *
@@ -128,8 +36,12 @@ static GdkPixbuf *get_btn_icon(const char *app_id) {
  * @return TRUE if the icon is set else FALSE
  */
 static gboolean set_btn_icon(WwtTab *self) {
-    GdkPixbuf *pixbuf = get_btn_icon(self->app_id);
+    WwtServices *services = wwt_app_get_services(self->app);
+    AppIcons *app_icons = wwt_services_get_app_icons(services);
+
+    GdkPixbuf *pixbuf = app_icons_get_icon(app_icons, self->app_id);
     GtkWidget *image = gtk_image_new_from_pixbuf(pixbuf);
+
     gtk_button_set_image(GTK_BUTTON(self), image);
     gtk_button_set_always_show_image(GTK_BUTTON(self), TRUE);
 
@@ -206,7 +118,7 @@ static void set_title_and_icon(WwtTab *self) {
         gtk_button_set_always_show_image(GTK_BUTTON(self), TRUE);
     }
 
-    // must be set before truncating the title
+    // tooltip must be set before truncating the title
     if(show_tooltip) {
         gtk_widget_set_tooltip_text(GTK_WIDGET(self), self->title);
     }
@@ -231,13 +143,18 @@ static gboolean on_button_press(
     gpointer user_data
 ) {
     WwtTab *tab = WWT_TAB(widget);
-    WwtWindowManager *wm = wwt_window_manager_instance();
+    WwtServices *services = wwt_app_get_services(tab->app);
 
-    if(!wm) {
+    if(!services) {
         return TRUE;
     }
 
-    WindowManagerSpec *spec = wwt_window_manager_get_spec(wm);
+    WindowManagerSpec *spec = wwt_services_get_window_manager_spec(services);
+
+    if(!spec) {
+        return TRUE;
+    }
+
     WindowManagerClickHandler window_focus =
         window_manager_spec_get_click_handler(spec, WM_CLICK_FOCUS);
     WindowManagerClickHandler window_close =

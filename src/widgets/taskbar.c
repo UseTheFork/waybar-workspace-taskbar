@@ -1,9 +1,9 @@
 #include "taskbar.h"
 #include "core/app.h"
 #include "core/config.h"
-#include "core/window_manager.h"
+#include "core/services.h"
 #include "core/window_manager_data.h"
-#include "core/window_manager_events.h"
+#include "services/window_manager_events.h"
 #include "tab.h"
 
 struct _WwtTaskbar {
@@ -198,10 +198,11 @@ static void wwt_taskbar_init(WwtTaskbar *self) {
  */
 static void dispose(GObject *obj) {
     WwtTaskbar *self = WWT_TASKBAR(obj);
-    WwtWindowManager *wm = wwt_window_manager_instance();
+    WwtServices *services = wwt_app_get_services(self->app);
 
-    if(wm) {
-        WindowManagerEvents *events = wwt_window_manager_get_events(wm);
+    if(services) {
+        WindowManagerEvents *events =
+            wwt_services_get_window_manager_events(services);
         window_manager_events_unsubscribe(events, self->events_subscription_id);
         self->events_subscription_id = -1;
     }
@@ -245,19 +246,19 @@ WwtTaskbar *wwt_taskbar_new(WwtApp *app) {
         NULL
     );
 
-    WwtWindowManager *wm = wwt_window_manager_instance();
+    self->app = app;
+    WwtServices *services = wwt_app_get_services(app);
 
-    if(!wm) {
+    if(!services) {
         g_object_unref(self);
         return NULL;
     }
 
-    WindowManagerEvents *wm_events = wwt_window_manager_get_events(wm);
+    WindowManagerEvents *wm_events =
+        wwt_services_get_window_manager_events(services);
+
     GtkStyleContext *ctx = gtk_widget_get_style_context(GTK_WIDGET(self));
-
     gtk_style_context_add_class(ctx, TASKBAR_CLASS_NAME);
-
-    self->app = app;
 
     self->events_subscription_id = window_manager_events_subscribe(
         wm_events,

@@ -1,6 +1,6 @@
 #include "window_manager_events.h"
+#include "core/window_manager_data.h"
 #include "glib.h"
-#include "window_manager_data.h"
 #include "window_manager_spec.h"
 #include <fcntl.h>
 #include <stdio.h>

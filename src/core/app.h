@@ -7,7 +7,7 @@ G_BEGIN_DECLS;
 
 typedef struct _WwtTaskbar WwtTaskbar;
 typedef struct _WwtConfig WwtConfig;
-typedef struct _WwtWindowManager WwtWindowManager;
+typedef struct _WwtServices WwtServices;
 
 #define WWT_APP_TYPE (wwt_app_get_type())
 
@@ -21,5 +21,6 @@ WwtApp *wwt_app_new(
 
 WwtTaskbar *wwt_app_get_taskbar(WwtApp *self);
 WwtConfig *wwt_app_get_config(WwtApp *self);
+WwtServices *wwt_app_get_services(WwtApp *self);
 
 G_END_DECLS;

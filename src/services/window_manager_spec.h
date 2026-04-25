@@ -1,12 +1,18 @@
 #pragma once
 
-#include "core/window_manager.h"
 #include <gtk/gtk.h>
 
 G_BEGIN_DECLS;
 
 typedef struct _WindowManagerData WindowManagerData;
 typedef struct WindowManagerEvent WindowManagerEvent;
+
+typedef enum WindowManagerId {
+    WM_ID_UNSUPPORTED,
+    WM_ID_SWAY,
+    WM_ID_NIRI,
+    WM_ID_HYPRLAND
+} WindowManagerId;
 
 typedef enum {
     WM_CLICK_FOCUS,
@@ -25,6 +31,7 @@ typedef gboolean (*WindowManagerClickHandler)(const char *id);
 typedef gboolean (*WindowManagerEventsValidator)(WindowManagerEvent *event);
 
 typedef struct WindowManagerSpec {
+    WindowManagerId id;
     WindowManagerEventsConstructor events_constructor;
     WindowManagerEventsDestructor events_destructor;
     WindowManagerEventsReader events_reader;
