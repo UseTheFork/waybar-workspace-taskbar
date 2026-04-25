@@ -18,7 +18,7 @@ static WwtCache *instance = NULL;
  * @param icon The icon
  * @return TRUE if set else FALSE
  */
-gboolean wwt_cache_set_icon(WwtCache *self, const gchar *key, GIcon *icon) {
+gboolean wwt_cache_set_icon(WwtCache *self, const gchar *key, GdkPixbuf *icon) {
     return g_hash_table_insert(self->icons, g_strdup(key), g_object_ref(icon));
 }
 
@@ -29,7 +29,7 @@ gboolean wwt_cache_set_icon(WwtCache *self, const gchar *key, GIcon *icon) {
  * @param key The app_id
  * @return the cached icon
  */
-GIcon *wwt_cache_get_icon(WwtCache *self, const gchar *key) {
+GdkPixbuf *wwt_cache_get_icon(WwtCache *self, const gchar *key) {
     return g_hash_table_lookup(self->icons, key);
 }
 
