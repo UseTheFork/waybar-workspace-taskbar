@@ -85,18 +85,20 @@ static void apply_class_names(WwtTab *self) {
  * @param max_len The max characters for the string to be including elipsis
  */
 static void truncate_title(gchar *title, int max_len) {
-    if(max_len < TITLE_MIN_CHARS) {
+    if(max_len <= TITLE_MIN_CHARS) {
         return;
     }
 
-    int len = strlen(title);
-
-    if(len > max_len && len > 3) {
-        title[max_len] = '\0';
-        title[max_len - 1] = '.';
-        title[max_len - 2] = '.';
-        title[max_len - 3] = '.';
+    glong len = g_utf8_strlen(title, -1);
+    if(len <= max_len) {
+        return;
     }
+
+    // Find byte offset of max_len-th character to deal with multibyte chars
+    gchar *end = g_utf8_offset_to_pointer(title, max_len - 3);
+    *end = '\0';
+
+    strcat(title, "...");
 }
 
 /**
