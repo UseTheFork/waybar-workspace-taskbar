@@ -85,7 +85,7 @@ static GdkPixbuf *create_icon_pixbuf(GIcon *icon) {
 
     if(!pixbuf) {
         pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, TRUE, 8, 16, 16);
-        gdk_pixbuf_fill(pixbuf, 0xFF0000FF);
+        gdk_pixbuf_fill(pixbuf, 0xEBEBEBFF);
     }
 
     return pixbuf;
