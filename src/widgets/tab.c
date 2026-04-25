@@ -112,9 +112,10 @@ static GdkPixbuf *get_btn_icon(const char *app_id) {
 
     GIcon *icon = g_app_info_get_icon(G_APP_INFO(info));
     GdkPixbuf *pixbuf = create_icon_pixbuf(icon);
-
     wwt_cache_set_icon(cache, app_id, pixbuf);
+
     g_object_unref(info);
+    g_object_unref(pixbuf);
 
     return pixbuf;
 }
