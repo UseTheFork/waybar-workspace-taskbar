@@ -43,6 +43,10 @@ static void dispose(GObject *obj) {
 
     g_clear_pointer(&self->icons, g_hash_table_destroy);
 
+    if(instance) {
+        instance = NULL;
+    }
+
     G_OBJECT_CLASS(wwt_cache_parent_class)->dispose(obj);
 }
 
