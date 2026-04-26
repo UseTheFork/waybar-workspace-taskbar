@@ -69,7 +69,7 @@ static GDesktopAppInfo *get_app_info(const gchar *app_id) {
  * @param icon The GIcon
  * @return The created pixbuf
  */
-static GdkPixbuf *create_icon_pixbuf(GIcon *icon) {
+static GdkPixbuf *create_icon_pixbuf(GIcon *icon, int size) {
     GdkPixbuf *pixbuf = NULL;
     GtkIconTheme *theme = gtk_icon_theme_get_default();
 
@@ -77,7 +77,7 @@ static GdkPixbuf *create_icon_pixbuf(GIcon *icon) {
         GtkIconInfo *info = gtk_icon_theme_lookup_by_gicon(
             theme,
             icon,
-            16,
+            size,
             GTK_ICON_LOOKUP_FORCE_SIZE
         );
 
@@ -88,7 +88,7 @@ static GdkPixbuf *create_icon_pixbuf(GIcon *icon) {
     }
 
     if(!pixbuf) {
-        pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, TRUE, 8, 16, 16);
+        pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, TRUE, 8, size, size);
         gdk_pixbuf_fill(pixbuf, 0xEBEBEBFF);
     }
 
@@ -101,7 +101,7 @@ static GdkPixbuf *create_icon_pixbuf(GIcon *icon) {
  * @param self
  * @return The icon
  */
-GdkPixbuf *app_icons_get_icon(AppIcons *self, const char *app_id) {
+GdkPixbuf *app_icons_get_icon(AppIcons *self, const char *app_id, int size) {
     GdkPixbuf *cached = cache_get_icon(self, app_id);
 
     if(cached) {
@@ -110,12 +110,15 @@ GdkPixbuf *app_icons_get_icon(AppIcons *self, const char *app_id) {
 
     GDesktopAppInfo *info = get_app_info(app_id);
     if(!info) {
-        return create_icon_pixbuf(NULL);
+        return create_icon_pixbuf(NULL, size);
     }
 
     GIcon *icon = g_app_info_get_icon(G_APP_INFO(info));
-    GdkPixbuf *pixbuf = create_icon_pixbuf(icon);
-    cache_set_icon(self, app_id, pixbuf);
+    GdkPixbuf *pixbuf = create_icon_pixbuf(icon, size);
+
+    char key[128];
+    snprintf(key, sizeof(key), "%s:%d", app_id, size);
+    cache_set_icon(self, key, pixbuf);
 
     g_object_unref(info);
     g_object_unref(pixbuf);

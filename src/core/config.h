@@ -24,6 +24,7 @@ int wwt_config_get_max_tabs(WwtConfig *self);
 int wwt_config_get_title_max_chars(WwtConfig *self);
 int wwt_config_get_title_max_chars(WwtConfig *self);
 gfloat wwt_config_get_text_align(WwtConfig *self);
+int wwt_config_get_icon_size(WwtConfig *self);
 
 WwtConfig *wwt_config_new(
     const wbcffi_config_entry *config_entries,

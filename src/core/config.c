@@ -17,6 +17,7 @@ struct _WwtConfig {
     int title_max_chars;
     char *output;
     gfloat text_align;
+    int icon_size;
 };
 
 G_DEFINE_TYPE(WwtConfig, wwt_config, G_TYPE_OBJECT);
@@ -114,6 +115,16 @@ int wwt_config_get_max_tabs(WwtConfig *self) {
  */
 gfloat wwt_config_get_text_align(WwtConfig *self) {
     return self->text_align;
+}
+
+/**
+ * Gets the icon_size value
+ *
+ * @param self
+ * @return The icons_size value
+ */
+int wwt_config_get_icon_size(WwtConfig *self) {
+    return self->icon_size;
 }
 
 /**
@@ -221,6 +232,14 @@ static void parse_config_entries(
             }
         }
 
+        if(strcmp("icon_size", config_entries[i].key) == 0) {
+            int icon_size = json_node_get_int(node);
+
+            if(icon_size > 0) {
+                self->icon_size = icon_size;
+            }
+        }
+
         g_object_unref(parser);
     }
 }
@@ -265,6 +284,7 @@ static void wwt_config_init(WwtConfig *self) {
     self->title_max_chars = -1;
     self->max_tabs = -1;
     self->text_align = TAB_TEXT_ALIGN_CENTER;
+    self->icon_size = 16;
 }
 
 /**
