@@ -79,7 +79,7 @@ static void apply_class_names(WwtTab *self) {
 }
 
 /**
- * Trucats the title with an elipsis
+ * Trucates the title with an elipsis
  *
  * @param title The title to trucate
  * @param max_len The max characters for the string to be including elipsis
