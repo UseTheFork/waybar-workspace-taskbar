@@ -114,6 +114,7 @@ static void wwt_services_class_init(WwtServicesClass *klass) {
 /**
  * Gets or creates the services instance
  *
+ * @param config The WwtConfig instance
  * @return The fully created services instance (Caller holds a reference)
  */
 WwtServices *wwt_services_default(WwtConfig *config) {
