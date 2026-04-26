@@ -73,6 +73,7 @@ Even though your using jsonc waybar doesn't parse out the comments when passing 
 | text_align      | no       | "center" | "left", "right", "center"  | Position of the text and icon in the tab.                                                                                                             |
 | max_tabs        | no       | -1       | int                        | Max amount of tabs to show -1 for unlimited. (See css configuration below to show the overflow indicator)                                             |
 | title_max_chars | no       | -1       | int > 3                    | Max amount of characters to show in the title, -1 for unlimited. (Note: this includes elipsis so if you set to 10, 3 of those characters will be ...) |
+| icon_size       | no       | 16       | int > 0                    | The size of the app icon to be displayed. (Note: icon aspect ratio is 1:1 so default is 16x16)                                                        |
 
 ### Configuring Styles
 
