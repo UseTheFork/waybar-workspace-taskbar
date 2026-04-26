@@ -67,9 +67,10 @@ static GDesktopAppInfo *get_app_info(const gchar *app_id) {
  * Creates a pixbuf from the GIcon
  *
  * @param icon The GIcon
+ * @param icon_size The size of icon pixbuf to create
  * @return The created pixbuf
  */
-static GdkPixbuf *create_icon_pixbuf(GIcon *icon, int size) {
+static GdkPixbuf *create_icon_pixbuf(GIcon *icon, int icon_size) {
     GdkPixbuf *pixbuf = NULL;
     GtkIconTheme *theme = gtk_icon_theme_get_default();
 
@@ -77,7 +78,7 @@ static GdkPixbuf *create_icon_pixbuf(GIcon *icon, int size) {
         GtkIconInfo *info = gtk_icon_theme_lookup_by_gicon(
             theme,
             icon,
-            size,
+            icon_size,
             GTK_ICON_LOOKUP_FORCE_SIZE
         );
 
@@ -88,7 +89,8 @@ static GdkPixbuf *create_icon_pixbuf(GIcon *icon, int size) {
     }
 
     if(!pixbuf) {
-        pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, TRUE, 8, size, size);
+        pixbuf =
+            gdk_pixbuf_new(GDK_COLORSPACE_RGB, TRUE, 8, icon_size, icon_size);
         gdk_pixbuf_fill(pixbuf, 0xEBEBEBFF);
     }
 
@@ -99,11 +101,17 @@ static GdkPixbuf *create_icon_pixbuf(GIcon *icon, int size) {
  * Gets the button icon either from cache or creates new
  *
  * @param self
+ * @param app_id The application id to get
+ * @param icon_size The icon size
  * @return The icon
  */
-GdkPixbuf *app_icons_get_icon(AppIcons *self, const char *app_id, int size) {
+GdkPixbuf *app_icons_get_icon(
+    AppIcons *self,
+    const char *app_id,
+    int icon_size
+) {
     char key[128];
-    snprintf(key, sizeof(key), "%s:%d", app_id, size);
+    snprintf(key, sizeof(key), "%s:%d", app_id, icon_size);
     GdkPixbuf *cached = cache_get_icon(self, key);
 
     if(cached) {
@@ -112,11 +120,11 @@ GdkPixbuf *app_icons_get_icon(AppIcons *self, const char *app_id, int size) {
 
     GDesktopAppInfo *info = get_app_info(app_id);
     if(!info) {
-        return create_icon_pixbuf(NULL, size);
+        return create_icon_pixbuf(NULL, icon_size);
     }
 
     GIcon *icon = g_app_info_get_icon(G_APP_INFO(info));
-    GdkPixbuf *pixbuf = create_icon_pixbuf(icon, size);
+    GdkPixbuf *pixbuf = create_icon_pixbuf(icon, icon_size);
     cache_set_icon(self, key, pixbuf);
 
     g_object_unref(info);
