@@ -29,18 +29,26 @@ static void handle_click(gpointer user_data) {
 }
 
 /**
- * Initialize the instance
+ * Sets up the widget properties and styles
  *
  * @param self
  */
-static void wwt_overflow_btn_init(WwtOverflowBtn *self) {
+static void setup_widget(WwtOverflowBtn *self) {
     GtkStyleContext *ctx = gtk_widget_get_style_context(GTK_WIDGET(self));
+
     if(self->type == OVERFLOW_BTN_START) {
         gtk_style_context_add_class(ctx, OVERFLOW_BTN_START_CLASS_NAME);
     } else {
         gtk_style_context_add_class(ctx, OVERFLOW_BTN_END_CLASS_NAME);
     }
+}
 
+/**
+ * Initialize the instance
+ *
+ * @param self
+ */
+static void wwt_overflow_btn_init(WwtOverflowBtn *self) {
     g_signal_connect(self, "clicked", G_CALLBACK(handle_click), self);
 }
 
@@ -97,9 +105,12 @@ WwtOverflowBtn *wwt_overflow_btn_new(
 
     WwtOverflowBtn *self =
         g_object_new(WWT_OVERFLOW_BUTTON_TYPE, "label", label, NULL);
+
     self->app = app;
     self->taskbar = taskbar;
     self->type = type;
+
+    setup_widget(self);
 
     return self;
 }
