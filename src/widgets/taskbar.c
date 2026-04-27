@@ -4,18 +4,17 @@
 #include "core/services.h"
 #include "core/window_manager_data.h"
 #include "glibconfig.h"
-#include "overflow_btn.h"
+#include "navigation_btn.h"
 #include "services/window_manager_events.h"
 #include "services/window_manager_spec.h"
 #include "tab.h"
-#include "widgets/overflow_btn.h"
 
 struct _WwtTaskbar {
     GtkBox parent_instance;
 
     WwtApp *app;
-    WwtOverflowBtn *overflow_btn_start;
-    WwtOverflowBtn *overflow_btn_end;
+    WwtNavigationBtn *navigation_btn_prev;
+    WwtNavigationBtn *navigation_btn_next;
     GtkBox *tabs;
     WindowManagerData *wm_data;
     int events_subscription_id;
@@ -46,7 +45,7 @@ static void apply_visual_styles(
     gboolean overflow_end
 ) {
     WwtConfig *config = wwt_app_get_config(self->app);
-    gboolean show_overflow_btns = wwt_config_get_show_overflow_btns(config);
+    gboolean show_navigation_btns = wwt_config_get_show_navigation_btns(config);
 
     GtkStyleContext *ctx = gtk_widget_get_style_context(GTK_WIDGET(self));
 
@@ -75,13 +74,14 @@ static void apply_visual_styles(
         gtk_style_context_remove_class(ctx, TASKBAR_CLASS_NAME_OVERFLOW_END);
     }
 
-    if(show_overflow_btns) {
+    if(show_navigation_btns &&
+        show_navigation_btns == NAVIGATION_BTN_DISPLAY_TYPE_OVERFLOW) {
         if(overflow_start || overflow_end) {
-            gtk_widget_show(GTK_WIDGET(self->overflow_btn_start));
-            gtk_widget_show(GTK_WIDGET(self->overflow_btn_end));
+            gtk_widget_show(GTK_WIDGET(self->navigation_btn_prev));
+            gtk_widget_show(GTK_WIDGET(self->navigation_btn_next));
         } else {
-            gtk_widget_hide(GTK_WIDGET(self->overflow_btn_start));
-            gtk_widget_hide(GTK_WIDGET(self->overflow_btn_end));
+            gtk_widget_hide(GTK_WIDGET(self->navigation_btn_prev));
+            gtk_widget_hide(GTK_WIDGET(self->navigation_btn_next));
         }
     }
 }
@@ -283,21 +283,21 @@ static void event_listener(WindowManagerEvent *event, gpointer user_data) {
  */
 static void setup_widgets(WwtTaskbar *self) {
     WwtConfig *config = wwt_app_get_config(self->app);
-    gboolean show_overflow_btns = wwt_config_get_show_overflow_btns(config);
+    gboolean show_navigation_btns = wwt_config_get_show_navigation_btns(config);
 
-    if(show_overflow_btns) {
-        self->overflow_btn_start =
-            wwt_overflow_btn_new(self->app, self, OVERFLOW_BTN_START);
-        self->overflow_btn_end =
-            wwt_overflow_btn_new(self->app, self, OVERFLOW_BTN_END);
+    if(show_navigation_btns) {
+        self->navigation_btn_prev =
+            wwt_navigation_btn_new(self->app, self, NAVIGATION_BTN_TYPE_START);
+        self->navigation_btn_next =
+            wwt_navigation_btn_new(self->app, self, NAVIGATION_BTN_TYPE_END);
     }
 
     self->tabs = GTK_BOX(gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0));
 
-    if(show_overflow_btns) {
+    if(show_navigation_btns) {
         gtk_box_pack_start(
             GTK_BOX(self),
-            GTK_WIDGET(self->overflow_btn_start),
+            GTK_WIDGET(self->navigation_btn_prev),
             FALSE,
             FALSE,
             0
@@ -305,19 +305,14 @@ static void setup_widgets(WwtTaskbar *self) {
     }
     gtk_box_pack_start(GTK_BOX(self), GTK_WIDGET(self->tabs), TRUE, TRUE, 0);
 
-    if(show_overflow_btns) {
+    if(show_navigation_btns) {
         gtk_box_pack_start(
             GTK_BOX(self),
-            GTK_WIDGET(self->overflow_btn_end),
+            GTK_WIDGET(self->navigation_btn_next),
             FALSE,
             FALSE,
             0
         );
-
-        gtk_widget_set_no_show_all(GTK_WIDGET(self->overflow_btn_start), TRUE);
-        gtk_widget_set_no_show_all(GTK_WIDGET(self->overflow_btn_end), TRUE);
-        gtk_widget_hide(GTK_WIDGET(self->overflow_btn_start));
-        gtk_widget_hide(GTK_WIDGET(self->overflow_btn_end));
     }
 
     // Set styles

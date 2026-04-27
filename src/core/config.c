@@ -3,6 +3,7 @@
 #include "json-glib/json-glib.h"
 #include "services/window_manager_spec.h"
 #include "utils.h"
+#include "widgets/navigation_btn.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -18,27 +19,12 @@ struct _WwtConfig {
     char *output;
     gfloat text_align;
     int icon_size;
-    gboolean show_overflow_btns;
-    gchar *overflow_btn_start_label;
-    gchar *overflow_btn_end_label;
+    NavigationBtnDisplayType show_navigation_btns;
+    gchar *navigation_btn_prev_label;
+    gchar *navigation_btn_next_label;
 };
 
 G_DEFINE_TYPE(WwtConfig, wwt_config, G_TYPE_OBJECT);
-
-/**
- * Really just for debugging but can be helpful
- *
- * @param self
- */
-void wwt_config_log_entries(WwtConfig *self) {
-    printf("Config Entries\n");
-    printf("window_manager_id: %d\n", self->window_manager_id);
-    printf("output: %s\n", self->output);
-    printf("show_title: %d\n", self->show_title);
-    printf("show_icon: %d\n", self->show_icon);
-    printf("title_max_chars: %d\n", self->title_max_chars);
-    printf("max_tabs: %d\n", self->max_tabs);
-}
 
 /**
  * Gets the window manager id value
@@ -131,33 +117,33 @@ int wwt_config_get_icon_size(WwtConfig *self) {
 }
 
 /**
- * Gets the show_overflow_btns value
+ * Gets the show_navigation_btns value
  *
  * @param self
- * @return The show_overflow_btns value
+ * @return The show_navigation_btns value
  */
-gboolean wwt_config_get_show_overflow_btns(WwtConfig *self) {
-    return self->show_overflow_btns;
+gboolean wwt_config_get_show_navigation_btns(WwtConfig *self) {
+    return self->show_navigation_btns;
 }
 
 /**
- * Gets the overflow_btn_start_label value
+ * Gets the navigation_btn_prev_label value
  *
  * @param self
- * @return The overflow_btn_start_label value
+ * @return The navigation_btn_prev_label value
  */
-gchar *wwt_config_get_overflow_btn_start_label(WwtConfig *self) {
-    return self->overflow_btn_start_label;
+gchar *wwt_config_get_navigation_btn_prev_label(WwtConfig *self) {
+    return self->navigation_btn_prev_label;
 }
 
 /**
- * Gets the overflow_btn_end_label value
+ * Gets the navigation_btn_next_label value
  *
  * @param self
- * @return The overflow_btn_end_label value
+ * @return The navigation_btn_next_label value
  */
-gchar *wwt_config_get_overflow_btn_end_label(WwtConfig *self) {
-    return self->overflow_btn_end_label;
+gchar *wwt_config_get_navigation_btn_next_label(WwtConfig *self) {
+    return self->navigation_btn_next_label;
 }
 
 /**
@@ -273,28 +259,35 @@ static void parse_config_entries(
             }
         }
 
-        if(strcmp("show_overflow_btns", key) == 0) {
-            int show_overflow_btns = json_node_get_boolean(node);
+        if(strcmp("show_navigation_btns", key) == 0) {
+            int show_navigation_btns = json_node_get_int(node);
 
-            if(show_overflow_btns) {
-                self->show_overflow_btns = TRUE;
+            if(show_navigation_btns == NAVIGATION_BTN_DISPLAY_TYPE_OVERFLOW) {
+                self->show_navigation_btns =
+                    NAVIGATION_BTN_DISPLAY_TYPE_OVERFLOW;
+            } else if(
+                show_navigation_btns == NAVIGATION_BTN_DISPLAY_TYPE_ALWAYS
+            ) {
+                self->show_navigation_btns = NAVIGATION_BTN_DISPLAY_TYPE_ALWAYS;
             } else {
-                self->show_overflow_btns = FALSE;
+                self->show_navigation_btns = NAVIGATION_BTN_DISPLAY_TYPE_NEVER;
             }
         }
 
-        if(strcmp("overflow_btn_start_label", config_entries[i].key) == 0) {
-            const char *overflow_btn_start_label = json_node_get_string(node);
+        if(strcmp("navigation_btn_prev_label", config_entries[i].key) == 0) {
+            const char *navigation_btn_prev_label = json_node_get_string(node);
 
-            g_free(self->overflow_btn_start_label);
-            self->overflow_btn_start_label = g_strdup(overflow_btn_start_label);
+            g_free(self->navigation_btn_prev_label);
+            self->navigation_btn_prev_label =
+                g_strdup(navigation_btn_prev_label);
         }
 
-        if(strcmp("overflow_btn_end_label", config_entries[i].key) == 0) {
-            const char *overflow_btn_end_label = json_node_get_string(node);
+        if(strcmp("navigation_btn_next_label", config_entries[i].key) == 0) {
+            const char *navigation_btn_next_label = json_node_get_string(node);
 
-            g_free(self->overflow_btn_end_label);
-            self->overflow_btn_end_label = g_strdup(overflow_btn_end_label);
+            g_free(self->navigation_btn_next_label);
+            self->navigation_btn_next_label =
+                g_strdup(navigation_btn_next_label);
         }
 
         g_object_unref(parser);
@@ -314,14 +307,14 @@ static void dispose(GObject *obj) {
         self->output = NULL;
     }
 
-    if(self->overflow_btn_start_label) {
-        g_free(self->overflow_btn_start_label);
-        self->overflow_btn_start_label = NULL;
+    if(self->navigation_btn_prev_label) {
+        g_free(self->navigation_btn_prev_label);
+        self->navigation_btn_prev_label = NULL;
     }
 
-    if(self->overflow_btn_end_label) {
-        g_free(self->overflow_btn_end_label);
-        self->overflow_btn_end_label = NULL;
+    if(self->navigation_btn_next_label) {
+        g_free(self->navigation_btn_next_label);
+        self->navigation_btn_next_label = NULL;
     }
 
     G_OBJECT_CLASS(wwt_config_parent_class)->dispose(obj);
@@ -352,9 +345,9 @@ static void wwt_config_init(WwtConfig *self) {
     self->max_tabs = -1;
     self->text_align = TAB_TEXT_ALIGN_CENTER;
     self->icon_size = 16;
-    self->show_overflow_btns = FALSE;
-    self->overflow_btn_start_label = g_strdup("<");
-    self->overflow_btn_end_label = g_strdup(">");
+    self->show_navigation_btns = NAVIGATION_BTN_DISPLAY_TYPE_NEVER;
+    self->navigation_btn_prev_label = g_strdup("<");
+    self->navigation_btn_next_label = g_strdup(">");
 }
 
 /**

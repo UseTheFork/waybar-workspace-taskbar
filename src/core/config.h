@@ -25,9 +25,9 @@ int wwt_config_get_title_max_chars(WwtConfig *self);
 int wwt_config_get_title_max_chars(WwtConfig *self);
 gfloat wwt_config_get_text_align(WwtConfig *self);
 int wwt_config_get_icon_size(WwtConfig *self);
-gboolean wwt_config_get_show_overflow_btns(WwtConfig *self);
-gchar *wwt_config_get_overflow_btn_start_label(WwtConfig *self);
-gchar *wwt_config_get_overflow_btn_end_label(WwtConfig *self);
+gboolean wwt_config_get_show_navigation_btns(WwtConfig *self);
+gchar *wwt_config_get_navigation_btn_prev_label(WwtConfig *self);
+gchar *wwt_config_get_navigation_btn_next_label(WwtConfig *self);
 
 WwtConfig *wwt_config_new(
     const wbcffi_config_entry *config_entries,

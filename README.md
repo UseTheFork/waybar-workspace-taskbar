@@ -45,7 +45,7 @@ You need to setup the `cffi/module-name` in your `config.json` file for waybar. 
 
 Minimal example:
 
-```
+```json
 "modules-left": [
     "cffi/waybar-workspace-taskbar"
 ],
@@ -63,42 +63,45 @@ Note: You may need to use absolute paths depending on your environment.
 
 Even though your using jsonc waybar doesn't parse out the comments when passing them to the cffi module. So as of right now keep your comments outside the cffi module config.
 
-| Keys                     | Required | Default  | Allowed                    | Description                                                                                                                                           |
-| ------------------------ | -------- | -------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| window_manager           | yes      | NULL     | "sway", "hyprland", "niri" | The window manager you are currently using.                                                                                                           |
-| output                   | no       | NULL     | true, false                | The monitor you want to bind to. If no output is set then it defaults to showing the focused workspace.                                               |
-| show_icon                | no       | true     | true, false                | Whether or not you want to show the application icon.                                                                                                 |
-| show_title               | no       | false    | true, false                | Whether or not you want to show the window title.                                                                                                     |
-| show_tooltip             | no       | false    | true, false                | Whether or not you want to show a tooltip when hovering on the tab.                                                                                   |
-| text_align               | no       | "center" | "left", "right", "center"  | Position of the text and icon in the tab.                                                                                                             |
-| max_tabs                 | no       | -1       | int                        | Max amount of tabs to show -1 for unlimited. (See css configuration below to show the overflow indicator)                                             |
-| title_max_chars          | no       | -1       | int > 3                    | Max amount of characters to show in the title, -1 for unlimited. (Note: this includes elipsis so if you set to 10, 3 of those characters will be ...) |
-| icon_size                | no       | 16       | int > 0                    | The size of the app icon to be displayed. (Note: icon aspect ratio is 1:1 so default is 16x16)                                                        |
-| show_overflow_btns       | no       | false    | true, false                | Whether or not to show buttons when there is overflow when max_tabs is set. Overflow buttons switch focus prev and next.                              |
-| overflow_btn_start_label | no       | "<"      | string                     | The label for the overflow start button.                                                                                                              |
-| overflow_btn_end_label   | no       | ">"      | string                     | The label for the overflow end button.                                                                                                                |
+| Keys                      | Required | Default  | Allowed                                  | Description                                                                                                                                           |
+| ------------------------- | -------- | -------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| window_manager            | yes      | NULL     | "sway", "hyprland", "niri"               | The window manager you are currently using.                                                                                                           |
+| output                    | no       | NULL     | true, false                              | The monitor you want to bind to. If no output is set then it defaults to showing the focused workspace.                                               |
+| show_icon                 | no       | true     | true, false                              | Whether or not you want to show the application icon.                                                                                                 |
+| show_title                | no       | false    | true, false                              | Whether or not you want to show the window title.                                                                                                     |
+| show_tooltip              | no       | false    | true, false                              | Whether or not you want to show a tooltip when hovering on the tab.                                                                                   |
+| text_align                | no       | "center" | "left", "right", "center"                | Position of the text and icon in the tab.                                                                                                             |
+| max_tabs                  | no       | -1       | int                                      | Max amount of tabs to show -1 for unlimited. (See css configuration below to show the overflow indicator)                                             |
+| title_max_chars           | no       | -1       | int > 3                                  | Max amount of characters to show in the title, -1 for unlimited. (Note: this includes elipsis so if you set to 10, 3 of those characters will be ...) |
+| icon_size                 | no       | 16       | int > 0                                  | The size of the app icon to be displayed. (Note: icon aspect ratio is 1:1 so default is 16x16)                                                        |
+| show_navigation_btns      | no       | 0        | 0 = never, 1 = overlfow only, 2 = always | Whether or not to show navigation buttons. Navigation buttons switch focus prev and next.                                                             |
+| navigation_btn_prev_label | no       | "<"      | string                                   | The label for the navigation prev button.                                                                                                             |
+| navigation_btn_next_label | no       | ">"      | string                                   | The label for the navigation next button.                                                                                                             |
 
 ### Configuring Styles
 
-A couple of css classes will be applied `.taskbar`, `.tab`, `.tab.focused`, `.taskbar.overflow-start`, `.taskbar.overflow-end`. You can style things to your liking.
+A couple of css classes will be applied so you can style things accordingly.
 
-Simple example obviously you should style these to your liking:
+- `.taskbar`
+- `.taskbar.overflow-start`
+- `.taskbar.overflow-end`
+- `.taskbar.empty`
+- `.taskbar.single`
+- `.tabs`
+- `.tab`
+- `.tab.focused`
+- `.navigation-btn-prev`
+- `.navigation-btn-next`
 
-```
-.taskbar.overflow-start {
+Simple example might be like the following:
+
+```css
+.taskbar.overflow-start .tabs {
   border-left: 10px solid red;
 }
 
-.taskbar.overflow-end {
+.taskbar.overflow-end .tabs {
   border-right: 10px solid red;
-}
-
-.taskbar.empty {
-  /* if you want specific styles when empty */
-}
-
-.taskbar.single {
-  /* if you want specific styles when only 1 tab is displayed */
 }
 
 .tab {
@@ -117,6 +120,20 @@ Simple example obviously you should style these to your liking:
 .tab.urgent {
   color: red;
 }
+```
+
+The css parent/child structure is as follows:
+
+```jsx
+<Taskbar>
+  <NavigationBtnPrev />
+  <Tabs>
+    <Tab />
+    <Tab />
+    <Tab />
+  </Tabs>
+  <NavigationBtnNext />
+</Taskbar>
 ```
 
 ## Usage
