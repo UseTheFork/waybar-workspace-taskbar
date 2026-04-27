@@ -17,6 +17,8 @@ G_DEFINE_TYPE(WwtOverflowBtn, wwt_overflow_btn, GTK_TYPE_BUTTON);
 
 /**
  * Handles the click action
+ *
+ * @param user_data User defined data (self in this instance)
  */
 static void handle_click(gpointer user_data) {
     WwtOverflowBtn *self = user_data;
