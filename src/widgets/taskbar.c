@@ -76,15 +76,11 @@ static void apply_visual_styles(
     }
 
     if(show_overflow_btns) {
-        if(overflow_start) {
+        if(overflow_start || overflow_end) {
             gtk_widget_show(GTK_WIDGET(self->overflow_btn_start));
-        } else {
-            gtk_widget_hide(GTK_WIDGET(self->overflow_btn_start));
-        }
-
-        if(overflow_end) {
             gtk_widget_show(GTK_WIDGET(self->overflow_btn_end));
         } else {
+            gtk_widget_hide(GTK_WIDGET(self->overflow_btn_start));
             gtk_widget_hide(GTK_WIDGET(self->overflow_btn_end));
         }
     }
