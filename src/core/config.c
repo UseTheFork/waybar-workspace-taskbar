@@ -18,6 +18,9 @@ struct _WwtConfig {
     char *output;
     gfloat text_align;
     int icon_size;
+    gboolean show_overflow_btns;
+    gchar *overflow_btn_start_label;
+    gchar *overflow_btn_end_label;
 };
 
 G_DEFINE_TYPE(WwtConfig, wwt_config, G_TYPE_OBJECT);
@@ -125,6 +128,36 @@ gfloat wwt_config_get_text_align(WwtConfig *self) {
  */
 int wwt_config_get_icon_size(WwtConfig *self) {
     return self->icon_size;
+}
+
+/**
+ * Gets the show_overflow_btns value
+ *
+ * @param self
+ * @return The show_overflow_btns value
+ */
+gboolean wwt_config_get_show_overflow_btns(WwtConfig *self) {
+    return self->show_overflow_btns;
+}
+
+/**
+ * Gets the overflow_btn_start_label value
+ *
+ * @param self
+ * @return The overflow_btn_start_label value
+ */
+gchar *wwt_config_get_overflow_btn_start_label(WwtConfig *self) {
+    return self->overflow_btn_start_label;
+}
+
+/**
+ * Gets the overflow_btn_end_label value
+ *
+ * @param self
+ * @return The overflow_btn_end_label value
+ */
+gchar *wwt_config_get_overflow_btn_end_label(WwtConfig *self) {
+    return self->overflow_btn_end_label;
 }
 
 /**
@@ -240,6 +273,30 @@ static void parse_config_entries(
             }
         }
 
+        if(strcmp("show_overflow_btns", key) == 0) {
+            int show_overflow_btns = json_node_get_boolean(node);
+
+            if(show_overflow_btns) {
+                self->show_overflow_btns = TRUE;
+            } else {
+                self->show_overflow_btns = FALSE;
+            }
+        }
+
+        if(strcmp("overflow_btn_start_label", config_entries[i].key) == 0) {
+            const char *overflow_btn_start_label = json_node_get_string(node);
+
+            g_free(self->overflow_btn_start_label);
+            self->overflow_btn_start_label = g_strdup(overflow_btn_start_label);
+        }
+
+        if(strcmp("overflow_btn_end_label", config_entries[i].key) == 0) {
+            const char *overflow_btn_end_label = json_node_get_string(node);
+
+            g_free(self->overflow_btn_end_label);
+            self->overflow_btn_end_label = g_strdup(overflow_btn_end_label);
+        }
+
         g_object_unref(parser);
     }
 }
@@ -255,6 +312,16 @@ static void dispose(GObject *obj) {
     if(self->output) {
         g_free(self->output);
         self->output = NULL;
+    }
+
+    if(self->overflow_btn_start_label) {
+        g_free(self->overflow_btn_start_label);
+        self->overflow_btn_start_label = NULL;
+    }
+
+    if(self->overflow_btn_end_label) {
+        g_free(self->overflow_btn_end_label);
+        self->overflow_btn_end_label = NULL;
     }
 
     G_OBJECT_CLASS(wwt_config_parent_class)->dispose(obj);
@@ -285,6 +352,9 @@ static void wwt_config_init(WwtConfig *self) {
     self->max_tabs = -1;
     self->text_align = TAB_TEXT_ALIGN_CENTER;
     self->icon_size = 16;
+    self->show_overflow_btns = FALSE;
+    self->overflow_btn_start_label = g_strdup("<");
+    self->overflow_btn_end_label = g_strdup(">");
 }
 
 /**

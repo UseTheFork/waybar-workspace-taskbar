@@ -3,18 +3,28 @@
 #include "core/config.h"
 #include "core/services.h"
 #include "core/window_manager_data.h"
+#include "glibconfig.h"
+#include "overflow_btn.h"
 #include "services/window_manager_events.h"
+#include "services/window_manager_spec.h"
 #include "tab.h"
+#include "widgets/overflow_btn.h"
 
 struct _WwtTaskbar {
     GtkBox parent_instance;
 
     WwtApp *app;
+    WwtOverflowBtn *overflow_btn_start;
+    WwtOverflowBtn *overflow_btn_end;
+    GtkBox *tabs;
+    WindowManagerData *wm_data;
     int events_subscription_id;
+    int prev_focused_index;
 };
 
 G_DEFINE_TYPE(WwtTaskbar, wwt_taskbar, GTK_TYPE_BOX);
 
+#define TABS_CLASS_NAME "tabs"
 #define TASKBAR_CLASS_NAME "taskbar"
 #define TASKBAR_CLASS_NAME_EMPTY "empty"
 #define TASKBAR_CLASS_NAME_SINGLE "single"
@@ -29,12 +39,15 @@ G_DEFINE_TYPE(WwtTaskbar, wwt_taskbar, GTK_TYPE_BOX);
  * @param overflow_start Whether there is max tabs overflow at the start
  * @param overflow_end Whether there is max tabs overflow at the end
  */
-void wwt_taskbar_apply_class_names(
+static void apply_visual_styles(
     WwtTaskbar *self,
     int tab_len,
     gboolean overflow_start,
     gboolean overflow_end
 ) {
+    WwtConfig *config = wwt_app_get_config(self->app);
+    gboolean show_overflow_btns = wwt_config_get_show_overflow_btns(config);
+
     GtkStyleContext *ctx = gtk_widget_get_style_context(GTK_WIDGET(self));
 
     if(tab_len == 0) {
@@ -61,6 +74,20 @@ void wwt_taskbar_apply_class_names(
     } else {
         gtk_style_context_remove_class(ctx, TASKBAR_CLASS_NAME_OVERFLOW_END);
     }
+
+    if(show_overflow_btns) {
+        if(overflow_start) {
+            gtk_widget_show(GTK_WIDGET(self->overflow_btn_start));
+        } else {
+            gtk_widget_hide(GTK_WIDGET(self->overflow_btn_start));
+        }
+
+        if(overflow_end) {
+            gtk_widget_show(GTK_WIDGET(self->overflow_btn_end));
+        } else {
+            gtk_widget_hide(GTK_WIDGET(self->overflow_btn_end));
+        }
+    }
 }
 
 /**
@@ -69,42 +96,107 @@ void wwt_taskbar_apply_class_names(
  * @param wins The array of windows
  * @return The focused windows index
  */
-static int get_focused_index(GPtrArray *wins) {
+static int get_focused_index(WwtTaskbar *self, GPtrArray *wins) {
+    if(wins->len == 0) {
+        self->prev_focused_index = 0;
+        return 0;
+    }
+
     for(guint i = 0; i < wins->len; i++) {
         WindowManagerWindow *win = g_ptr_array_index(wins, i);
+
         if(win->focused) {
+            self->prev_focused_index = i;
             return i;
         }
     }
 
-    return 0;
+    self->prev_focused_index =
+        CLAMP(self->prev_focused_index, 0, (int)wins->len - 1);
+
+    return self->prev_focused_index;
 }
 
 /**
- * Generates the tabs
+ * Gets the windows to be displayed in tabs
  *
- * @param bar The tabs instance
+ * @param self
+ * @return A GPtrArray of tabs to be displayed
  */
-void wwt_taskbar_populate_tabs(WindowManagerData *wm_data, gpointer user_data) {
-    WwtTaskbar *self = user_data;
+static GPtrArray *get_display_windows(WwtTaskbar *self) {
     WwtConfig *config = wwt_app_get_config(self->app);
-
-    int max_tabs = wwt_config_get_max_tabs(config);
     const gchar *output = wwt_config_get_output(config);
 
-    GPtrArray *wins;
-
+    GPtrArray *wins = NULL;
     if(output) {
-        wins = window_manager_data_get_windows_on_output(wm_data, output);
+        wins = window_manager_data_get_windows_on_output(self->wm_data, output);
     } else {
-        wins = window_manager_data_get_windows_on_focused(wm_data);
+        wins = window_manager_data_get_windows_on_focused(self->wm_data);
     }
+
+    return wins;
+}
+
+/**
+ * Focus the next window in the list
+ *
+ * @param self
+ */
+void wwt_taskbar_shift_focus(
+    WwtTaskbar *self,
+    TaskbarFocusDirection direction
+) {
+    WwtServices *services = wwt_app_get_services(self->app);
+    WindowManagerSpec *spec = wwt_services_get_window_manager_spec(services);
+    WindowManagerClickHandler focus_window =
+        window_manager_spec_get_click_handler(spec, WM_CLICK_FOCUS);
+    GPtrArray *wins = get_display_windows(self);
+
+    if(!wins || wins->len == 0) {
+        return;
+    }
+
+    int focused_index = get_focused_index(self, wins);
+    int index = 0;
+
+    if(direction == TASKBAR_FOCUS_NEXT) {
+        index = CLAMP(focused_index + 1, 0, (int)wins->len - 1);
+    } else {
+        index = CLAMP(focused_index - 1, 0, (int)wins->len - 1);
+    }
+
+    WindowManagerWindow *win = g_ptr_array_index(wins, index);
+    focus_window(win->id);
+}
+
+/**
+ * Gets data from the window manager and renders the tabs
+ *
+ * @param self
+ */
+void wwt_taskbar_update_tabs(WwtTaskbar *self) {
+    WwtServices *services = wwt_app_get_services(self->app);
+    WwtConfig *config = wwt_app_get_config(self->app);
+    WindowManagerSpec *spec = wwt_services_get_window_manager_spec(services);
+
+    WindowManagerDataFetcher fetch_data =
+        window_manager_spec_get_data_fetcher(spec);
+
+    window_manager_data_destroy(self->wm_data);
+    self->wm_data = fetch_data();
+
+    if(!self->wm_data) {
+        return;
+    }
+
+    int max_tabs = wwt_config_get_max_tabs(config);
+    GPtrArray *wins = get_display_windows(self);
 
     if(!wins) {
         return;
     }
 
-    int focused_index = get_focused_index(wins);
+    int focused_index = get_focused_index(self, wins);
     int start = 0;
     int end = wins->len;
 
@@ -123,7 +215,8 @@ void wwt_taskbar_populate_tabs(WindowManagerData *wm_data, gpointer user_data) {
         }
     }
 
-    GList *children = gtk_container_get_children(GTK_CONTAINER(self));
+    GtkBox *tabs = self->tabs;
+    GList *children = gtk_container_get_children(GTK_CONTAINER(tabs));
     GList *child = children;
 
     for(guint i = start; i < end; i++) {
@@ -142,7 +235,7 @@ void wwt_taskbar_populate_tabs(WindowManagerData *wm_data, gpointer user_data) {
                 win->y
             );
 
-            gtk_container_add(GTK_CONTAINER(self), GTK_WIDGET(tab));
+            gtk_container_add(GTK_CONTAINER(tabs), GTK_WIDGET(tab));
         } else {
             wwt_tab_update(
                 WWT_TAB(child->data),
@@ -164,7 +257,7 @@ void wwt_taskbar_populate_tabs(WindowManagerData *wm_data, gpointer user_data) {
 
     while(child != NULL) {
         GList *next = child->next;
-        gtk_container_remove(GTK_CONTAINER(self), GTK_WIDGET(child->data));
+        gtk_container_remove(GTK_CONTAINER(tabs), GTK_WIDGET(child->data));
         child = next;
     }
 
@@ -173,18 +266,76 @@ void wwt_taskbar_populate_tabs(WindowManagerData *wm_data, gpointer user_data) {
 
     gboolean overflow_start = start > 0;
     gboolean overflow_end = end < (int)wins->len;
-    wwt_taskbar_apply_class_names(
-        self,
-        wins->len,
-        overflow_start,
-        overflow_end
-    );
-
-    return;
+    apply_visual_styles(self, wins->len, overflow_start, overflow_end);
 }
 
 /**
- * Initialize the tabs instance
+ * Event listener for the window manager
+ *
+ * @param event The window manager event
+ * @param user_data The data passed in (self)
+ */
+static void event_listener(WindowManagerEvent *event, gpointer user_data) {
+    WwtTaskbar *self = user_data;
+    wwt_taskbar_update_tabs(self);
+}
+
+/**
+ * Sets up the widgets used by the taskbar
+ *
+ * @param self
+ */
+static void setup_widgets(WwtTaskbar *self) {
+    WwtConfig *config = wwt_app_get_config(self->app);
+    gboolean show_overflow_btns = wwt_config_get_show_overflow_btns(config);
+
+    if(show_overflow_btns) {
+        self->overflow_btn_start =
+            wwt_overflow_btn_new(self->app, self, OVERFLOW_BTN_START);
+        self->overflow_btn_end =
+            wwt_overflow_btn_new(self->app, self, OVERFLOW_BTN_END);
+    }
+
+    self->tabs = GTK_BOX(gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0));
+
+    if(show_overflow_btns) {
+        gtk_box_pack_start(
+            GTK_BOX(self),
+            GTK_WIDGET(self->overflow_btn_start),
+            FALSE,
+            FALSE,
+            0
+        );
+    }
+    gtk_box_pack_start(GTK_BOX(self), GTK_WIDGET(self->tabs), TRUE, TRUE, 0);
+
+    if(show_overflow_btns) {
+        gtk_box_pack_start(
+            GTK_BOX(self),
+            GTK_WIDGET(self->overflow_btn_end),
+            FALSE,
+            FALSE,
+            0
+        );
+
+        gtk_widget_set_no_show_all(GTK_WIDGET(self->overflow_btn_start), TRUE);
+        gtk_widget_set_no_show_all(GTK_WIDGET(self->overflow_btn_end), TRUE);
+        gtk_widget_hide(GTK_WIDGET(self->overflow_btn_start));
+        gtk_widget_hide(GTK_WIDGET(self->overflow_btn_end));
+    }
+
+    // Set styles
+    GtkStyleContext *taskbar_style_ctx =
+        gtk_widget_get_style_context(GTK_WIDGET(self));
+    gtk_style_context_add_class(taskbar_style_ctx, TASKBAR_CLASS_NAME);
+
+    GtkStyleContext *tabs_style_ctx =
+        gtk_widget_get_style_context(GTK_WIDGET(self->tabs));
+    gtk_style_context_add_class(tabs_style_ctx, TABS_CLASS_NAME);
+}
+
+/**
+ * Initialize the instance
  *
  * @param self
  */
@@ -192,9 +343,9 @@ static void wwt_taskbar_init(WwtTaskbar *self) {
 }
 
 /**
- * Dispose the tabs instance. Gref cleanup.
+ * Dispose the instance
  *
- * @param obj The stuct obj.
+ * @param obj The stuct obj
  */
 static void dispose(GObject *obj) {
     WwtTaskbar *self = WWT_TASKBAR(obj);
@@ -207,13 +358,18 @@ static void dispose(GObject *obj) {
         self->events_subscription_id = -1;
     }
 
+    if(self->wm_data) {
+        window_manager_data_destroy(self->wm_data);
+        self->wm_data = NULL;
+    }
+
     G_OBJECT_CLASS(wwt_taskbar_parent_class)->dispose(obj);
 }
 
 /**
- * Finalizer for the tabs instance
+ * Finalizer for the instance
  *
- * @param object The tabs struct
+ * @param object The struct obj
  */
 static void finalize(GObject *obj) {
     G_OBJECT_CLASS(wwt_taskbar_parent_class)->finalize(obj);
@@ -231,10 +387,10 @@ static void wwt_taskbar_class_init(WwtTaskbarClass *klass) {
 }
 
 /**
- * Creates a new instance of the tabs widget
+ * Creates a new instance of a taskbar
  *
  * @param app The app instance
- * @return The fully created tabs widget
+ * @return The fully created taskbar widget
  */
 WwtTaskbar *wwt_taskbar_new(WwtApp *app) {
     WwtTaskbar *self = g_object_new(
@@ -247,8 +403,10 @@ WwtTaskbar *wwt_taskbar_new(WwtApp *app) {
     );
 
     self->app = app;
-    WwtServices *services = wwt_app_get_services(app);
+    self->prev_focused_index = 0;
+    setup_widgets(self);
 
+    WwtServices *services = wwt_app_get_services(app);
     if(!services) {
         g_object_unref(self);
         return NULL;
@@ -257,14 +415,10 @@ WwtTaskbar *wwt_taskbar_new(WwtApp *app) {
     WindowManagerEvents *wm_events =
         wwt_services_get_window_manager_events(services);
 
-    GtkStyleContext *ctx = gtk_widget_get_style_context(GTK_WIDGET(self));
-    gtk_style_context_add_class(ctx, TASKBAR_CLASS_NAME);
+    self->events_subscription_id =
+        window_manager_events_subscribe(wm_events, event_listener, self);
 
-    self->events_subscription_id = window_manager_events_subscribe(
-        wm_events,
-        wwt_taskbar_populate_tabs,
-        self
-    );
+    wwt_taskbar_update_tabs(self);
 
     return self;
 }

@@ -26,7 +26,7 @@ typedef gboolean (*WindowManagerEventsReader)(
     FILE *socket_file,
     WindowManagerEvent *event
 );
-typedef WindowManagerData *(*WindowManagerDataGetter)();
+typedef WindowManagerData *(*WindowManagerDataFetcher)();
 typedef gboolean (*WindowManagerClickHandler)(const char *id);
 typedef gboolean (*WindowManagerEventsValidator)(WindowManagerEvent *event);
 
@@ -36,7 +36,7 @@ typedef struct WindowManagerSpec {
     WindowManagerEventsDestructor events_destructor;
     WindowManagerEventsReader events_reader;
     WindowManagerEventsValidator events_validator;
-    WindowManagerDataGetter data_getter;
+    WindowManagerDataFetcher data_fetcher;
     WindowManagerClickHandler window_focus;
     WindowManagerClickHandler window_close;
     WindowManagerClickHandler window_float;
@@ -58,7 +58,7 @@ WindowManagerClickHandler window_manager_spec_get_click_handler(
     WindowManagerSpec *self,
     WindowManagerClickHandlerType type
 );
-WindowManagerDataGetter window_manager_spec_get_data_getter(
+WindowManagerDataFetcher window_manager_spec_get_data_fetcher(
     WindowManagerSpec *self
 );
 

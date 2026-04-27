@@ -1,5 +1,4 @@
 #include "window_manager_events.h"
-#include "core/window_manager_data.h"
 #include "glib.h"
 #include "window_manager_spec.h"
 #include <fcntl.h>
@@ -74,23 +73,13 @@ static void window_manager_event_destroy(WindowManagerEvent *event) {
  */
 static gboolean events_debounce_fn(gpointer user_data) {
     WindowManagerEvents *self = user_data;
-    WindowManagerDataGetter get_data =
-        window_manager_spec_get_data_getter(self->spec);
-
-    WindowManagerData *wm_data = get_data();
-
-    if(!wm_data) {
-        self->event->debounce_timeout_id = 0;
-        return G_SOURCE_REMOVE;
-    }
 
     for(int i = 0; i < WM_EVENTS_MAX_CALlBACKS; ++i) {
         if(self->subs[i]) {
-            self->subs[i]->cb(wm_data, self->subs[i]->user_data);
+            self->subs[i]->cb(self->event, self->subs[i]->user_data);
         }
     }
 
-    window_manager_data_destroy(wm_data);
     self->event->debounce_timeout_id = 0;
 
     return G_SOURCE_REMOVE;

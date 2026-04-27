@@ -16,6 +16,7 @@ src_files = files(
   'src/services/app_icons.c',
   'src/services/window_manager_events.c',
   'src/services/window_manager_spec.c',
+  'src/widgets/overflow_btn.c',
   'src/widgets/tab.c',
   'src/widgets/taskbar.c',
   'src/window_managers/niri.c',

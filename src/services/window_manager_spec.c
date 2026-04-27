@@ -78,15 +78,15 @@ WindowManagerClickHandler window_manager_spec_get_click_handler(
 }
 
 /**
- * Gets the data_getter
+ * Gets the data_fetcher
  *
  * @param self
- * @return The data_getter
+ * @return The data_fetcher
  */
-WindowManagerDataGetter window_manager_spec_get_data_getter(
+WindowManagerDataFetcher window_manager_spec_get_data_fetcher(
     WindowManagerSpec *self
 ) {
-    return self->data_getter;
+    return self->data_fetcher;
 }
 
 /**

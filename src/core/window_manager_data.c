@@ -87,7 +87,8 @@ static gboolean output_lookup_predicate(
  *
  * @param self
  * @param output The output name
- * @return The windows array or NULL if not found
+ * @return The windows array or NULL if not found (Window Manager Data owns the
+ * array)
  */
 GPtrArray *window_manager_data_get_windows_on_output(
     WindowManagerData *self,
@@ -110,7 +111,8 @@ GPtrArray *window_manager_data_get_windows_on_output(
  * Gets the windows from the focused workspaces
  *
  * @param self
- * @return The windows array or NULL if not found
+ * @return The windows array or NULL if not found (Window Manager Data owns the
+ * array)
  */
 GPtrArray *window_manager_data_get_windows_on_focused(WindowManagerData *self) {
     if(self->focused_workspace_id < 0) {
@@ -259,6 +261,10 @@ static void table_items_destroy_notify(gpointer data) {
  * @param self
  */
 void window_manager_data_destroy(WindowManagerData *self) {
+    if(!self) {
+        return;
+    }
+
     if(self->workspaces) {
         g_hash_table_destroy(self->workspaces);
         self->workspaces = NULL;

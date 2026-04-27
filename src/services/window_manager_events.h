@@ -18,7 +18,7 @@ typedef struct WindowManagerEvent {
 } WindowManagerEvent;
 
 typedef void (*WindowManagerEventsCallback)(
-    WindowManagerData *wm_data,
+    WindowManagerEvent *event,
     gpointer user_data
 );
 

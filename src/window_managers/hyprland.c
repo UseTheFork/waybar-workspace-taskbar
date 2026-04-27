@@ -146,7 +146,7 @@ static int window_sort(gconstpointer a, gconstpointer b) {
  *
  * @return (transfer full): Populated window manager data or NULL on error
  */
-static WindowManagerData *data_getter() {
+static WindowManagerData *data_fetcher() {
     WindowManagerData *wm_data = window_manager_data_create();
 
     char *batch_json = cmd_output("hyprctl --batch \"monitors; clients\" -j");
@@ -259,7 +259,7 @@ WindowManagerSpec *window_manager_spec_create_hyprland() {
     spec->events_destructor = events_destructor;
     spec->events_reader = events_reader;
     spec->events_validator = events_validator;
-    spec->data_getter = data_getter;
+    spec->data_fetcher = data_fetcher;
     spec->window_focus = window_focus;
     spec->window_close = window_close;
     spec->window_float = window_float;

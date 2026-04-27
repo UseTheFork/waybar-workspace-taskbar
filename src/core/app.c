@@ -140,17 +140,5 @@ WwtApp *wwt_app_new(
         GTK_WIDGET(self->taskbar)
     );
 
-    // Populate taskbar with tabs
-    WindowManagerSpec *spec =
-        wwt_services_get_window_manager_spec(self->services);
-    WindowManagerDataGetter get_data =
-        window_manager_spec_get_data_getter(spec);
-
-    WindowManagerData *wm_data = get_data();
-    if(wm_data) {
-        wwt_taskbar_populate_tabs(wm_data, self->taskbar);
-        window_manager_data_destroy(wm_data);
-    }
-
     return self;
 }
