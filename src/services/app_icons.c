@@ -48,6 +48,10 @@ static GDesktopAppInfo *get_app_info(const gchar *app_id) {
         gchar *desktop_id = g_strdup_printf("%s.desktop", app_id);
         info = g_desktop_app_info_new(desktop_id);
         g_free(desktop_id);
+
+        if(info) {
+            return info;
+        }
     }
 
     gchar ***results = g_desktop_app_info_search(app_id);
