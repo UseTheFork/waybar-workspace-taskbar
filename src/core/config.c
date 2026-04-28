@@ -20,6 +20,7 @@ struct _WwtConfig {
     gfloat text_align;
     int icon_size;
     NavigationBtnDisplayType show_navigation_btns;
+    NavigationBtnPos navigation_btn_pos;
     gchar *navigation_btn_prev_label;
     gchar *navigation_btn_next_label;
 };
@@ -144,6 +145,16 @@ gchar *wwt_config_get_navigation_btn_prev_label(WwtConfig *self) {
  */
 gchar *wwt_config_get_navigation_btn_next_label(WwtConfig *self) {
     return self->navigation_btn_next_label;
+}
+
+/**
+ * Gets the navigation_btn_pos value
+ *
+ * @param self
+ * @return The navigation_btn_pos value
+ */
+NavigationBtnPos wwt_config_get_navigation_btn_pos(WwtConfig *self) {
+    return self->navigation_btn_pos;
 }
 
 /**
@@ -274,6 +285,18 @@ static void parse_config_entries(
             }
         }
 
+        if(strcmp("navigation_btn_pos", config_entries[i].key) == 0) {
+            const char navigation_btn_pos = json_node_get_int(node);
+
+            if(navigation_btn_pos == NAVIGATION_BTN_POS_BEFORE) {
+                self->navigation_btn_pos = NAVIGATION_BTN_POS_BEFORE;
+            } else if(navigation_btn_pos == NAVIGATION_BTN_POS_AFTER) {
+                self->navigation_btn_pos = NAVIGATION_BTN_POS_AFTER;
+            } else {
+                self->navigation_btn_pos = NAVIGATION_BTN_POS_STAGGERED;
+            }
+        }
+
         if(strcmp("navigation_btn_prev_label", config_entries[i].key) == 0) {
             const char *navigation_btn_prev_label = json_node_get_string(node);
 
@@ -346,6 +369,7 @@ static void wwt_config_init(WwtConfig *self) {
     self->text_align = TAB_TEXT_ALIGN_CENTER;
     self->icon_size = 16;
     self->show_navigation_btns = NAVIGATION_BTN_DISPLAY_TYPE_NEVER;
+    self->navigation_btn_pos = NAVIGATION_BTN_POS_STAGGERED;
     self->navigation_btn_prev_label = g_strdup("<");
     self->navigation_btn_next_label = g_strdup(">");
 }

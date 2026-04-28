@@ -25,6 +25,12 @@ typedef enum NavigationBtnType {
     NAVIGATION_BTN_TYPE_END
 } NavigationBtnType;
 
+typedef enum NavigationBtnPos {
+    NAVIGATION_BTN_POS_STAGGERED = 0,
+    NAVIGATION_BTN_POS_BEFORE = 1,
+    NAVIGATION_BTN_POS_AFTER = 2
+} NavigationBtnPos;
+
 WwtNavigationBtn *wwt_navigation_btn_new(
     WwtApp *app,
     WwtTaskbar *taskbar,

@@ -284,6 +284,8 @@ static void event_listener(WindowManagerEvent *event, gpointer user_data) {
 static void setup_widgets(WwtTaskbar *self) {
     WwtConfig *config = wwt_app_get_config(self->app);
     gboolean show_navigation_btns = wwt_config_get_show_navigation_btns(config);
+    NavigationBtnPos navigation_btn_pos =
+        wwt_config_get_navigation_btn_pos(config);
 
     if(show_navigation_btns) {
         self->navigation_btn_prev =
@@ -294,7 +296,9 @@ static void setup_widgets(WwtTaskbar *self) {
 
     self->tabs = GTK_BOX(gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0));
 
-    if(show_navigation_btns) {
+    if(show_navigation_btns &&
+        (navigation_btn_pos == NAVIGATION_BTN_POS_BEFORE ||
+            navigation_btn_pos == NAVIGATION_BTN_POS_STAGGERED)) {
         gtk_box_pack_start(
             GTK_BOX(self),
             GTK_WIDGET(self->navigation_btn_prev),
@@ -302,10 +306,31 @@ static void setup_widgets(WwtTaskbar *self) {
             FALSE,
             0
         );
+        if(navigation_btn_pos == NAVIGATION_BTN_POS_BEFORE) {
+            gtk_box_pack_start(
+                GTK_BOX(self),
+                GTK_WIDGET(self->navigation_btn_next),
+                FALSE,
+                FALSE,
+                0
+            );
+        }
     }
+
     gtk_box_pack_start(GTK_BOX(self), GTK_WIDGET(self->tabs), TRUE, TRUE, 0);
 
-    if(show_navigation_btns) {
+    if(show_navigation_btns &&
+        (navigation_btn_pos == NAVIGATION_BTN_POS_AFTER ||
+            navigation_btn_pos == NAVIGATION_BTN_POS_STAGGERED)) {
+        if(navigation_btn_pos == NAVIGATION_BTN_POS_AFTER) {
+            gtk_box_pack_start(
+                GTK_BOX(self),
+                GTK_WIDGET(self->navigation_btn_prev),
+                FALSE,
+                FALSE,
+                0
+            );
+        }
         gtk_box_pack_start(
             GTK_BOX(self),
             GTK_WIDGET(self->navigation_btn_next),

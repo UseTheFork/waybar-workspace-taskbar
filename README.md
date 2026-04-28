@@ -75,6 +75,7 @@ Even though your using jsonc waybar doesn't parse out the comments when passing 
 | title_max_chars           | no       | -1       | int > 3                                  | Max amount of characters to show in the title, -1 for unlimited. (Note: this includes elipsis so if you set to 10, 3 of those characters will be ...) |
 | icon_size                 | no       | 16       | int > 0                                  | The size of the app icon to be displayed. (Note: icon aspect ratio is 1:1 so default is 16x16)                                                        |
 | show_navigation_btns      | no       | 0        | 0 = never, 1 = overlfow only, 2 = always | Whether or not to show navigation buttons. Navigation buttons switch focus prev and next.                                                             |
+| navigation_btn_pos        | no       | 0        | 0 = staggered, 1 = before, 2 = after     | Position of the navigation buttons. Before tabs, after tabs, or staggered one on each side.                                                           |
 | navigation_btn_prev_label | no       | "<"      | string                                   | The label for the navigation prev button.                                                                                                             |
 | navigation_btn_next_label | no       | ">"      | string                                   | The label for the navigation next button.                                                                                                             |
 

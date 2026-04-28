@@ -6,6 +6,7 @@
 G_BEGIN_DECLS;
 
 typedef enum WindowManagerId WindowManagerId;
+typedef enum NavigationBtnPos NavigationBtnPos;
 
 #define TAB_TEXT_ALIGN_LEFT 0.0
 #define TAB_TEXT_ALIGN_CENTER 0.5
@@ -28,6 +29,7 @@ int wwt_config_get_icon_size(WwtConfig *self);
 gboolean wwt_config_get_show_navigation_btns(WwtConfig *self);
 gchar *wwt_config_get_navigation_btn_prev_label(WwtConfig *self);
 gchar *wwt_config_get_navigation_btn_next_label(WwtConfig *self);
+NavigationBtnPos wwt_config_get_navigation_btn_pos(WwtConfig *self);
 
 WwtConfig *wwt_config_new(
     const wbcffi_config_entry *config_entries,
