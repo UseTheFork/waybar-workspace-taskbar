@@ -91,6 +91,7 @@ A couple of css classes will be applied so you can style things accordingly.
 - `.tabs`
 - `.tab`
 - `.tab.focused`
+- `.tab.floating`
 - `.tab.urgent`
 - `.navigation-btn-prev`
 - `.navigation-btn-next`
