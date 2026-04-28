@@ -296,9 +296,7 @@ static void setup_widgets(WwtTaskbar *self) {
 
     self->tabs = GTK_BOX(gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0));
 
-    if(show_navigation_btns &&
-        (navigation_btn_pos == NAVIGATION_BTN_POS_BEFORE ||
-            navigation_btn_pos == NAVIGATION_BTN_POS_STAGGERED)) {
+    if(show_navigation_btns && navigation_btn_pos != NAVIGATION_BTN_POS_AFTER) {
         gtk_box_pack_start(
             GTK_BOX(self),
             GTK_WIDGET(self->navigation_btn_prev),
@@ -320,8 +318,7 @@ static void setup_widgets(WwtTaskbar *self) {
     gtk_box_pack_start(GTK_BOX(self), GTK_WIDGET(self->tabs), TRUE, TRUE, 0);
 
     if(show_navigation_btns &&
-        (navigation_btn_pos == NAVIGATION_BTN_POS_AFTER ||
-            navigation_btn_pos == NAVIGATION_BTN_POS_STAGGERED)) {
+        navigation_btn_pos != NAVIGATION_BTN_POS_BEFORE) {
         if(navigation_btn_pos == NAVIGATION_BTN_POS_AFTER) {
             gtk_box_pack_start(
                 GTK_BOX(self),
