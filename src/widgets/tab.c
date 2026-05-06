@@ -265,9 +265,9 @@ void wwt_tab_update(
     g_free(self->win_id);
     self->win_id = g_strdup(win_id);
     g_free(self->title);
-    self->title = g_strdup(title);
+    self->title = title ? g_strdup(title) : g_strdup("");
     g_free(self->app_id);
-    self->app_id = g_strdup(app_id);
+    self->app_id = app_id ? g_strdup(app_id) : g_strdup("");
 
     self->focused = focused;
     self->floating = floating;
@@ -308,8 +308,8 @@ WwtTab *wwt_tab_new(
 
     self->app = app;
     self->win_id = g_strdup(win_id);
-    self->title = g_strdup(title);
-    self->app_id = g_strdup(app_id);
+    self->title = title ? g_strdup(title) : g_strdup("");
+    self->app_id = app_id ? g_strdup(app_id) : g_strdup("");
     self->focused = focused;
     self->floating = floating;
     self->urgent = urgent;
