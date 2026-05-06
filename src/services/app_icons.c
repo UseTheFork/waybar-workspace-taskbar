@@ -39,6 +39,10 @@ static GdkPixbuf *cache_get_icon(AppIcons *self, const gchar *key) {
  * @return the GDesktopAppInfo
  */
 static GDesktopAppInfo *get_app_info(const gchar *app_id) {
+    if(!app_id) {
+        return NULL;
+    }
+
     GDesktopAppInfo *info = g_desktop_app_info_new(app_id);
     if(info) {
         return info;
