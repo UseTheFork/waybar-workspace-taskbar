@@ -8,7 +8,7 @@
 #include <string.h>
 
 struct _WwtConfig {
-    GObject parent;
+    GObject parent_instance;
 
     WindowManagerId window_manager_id;
     gboolean show_title;

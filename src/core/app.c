@@ -6,7 +6,7 @@
 #include "widgets/taskbar.h"
 
 struct _WwtApp {
-    GObject parent;
+    GObject parent_instance;
 
     wbcffi_module *waybar_module;
     GtkContainer *root_widget;

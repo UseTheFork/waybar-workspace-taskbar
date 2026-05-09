@@ -11,7 +11,7 @@ typedef enum InitStatus {
 } InitStatus;
 
 struct _WwtServices {
-    GObject parent;
+    GObject parent_instance;
 
     WindowManagerSpec *window_manager_spec;
     WindowManagerEvents *window_manager_events;
