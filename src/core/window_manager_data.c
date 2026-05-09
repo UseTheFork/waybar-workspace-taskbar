@@ -3,8 +3,6 @@
 #define WINDOWS_PTR_ARRAY_RESERVED_SIZE 20
 
 struct _WindowManagerData {
-    GObject parent_instance;
-
     int focused_workspace_id;
     GHashTable *workspaces;
 };
