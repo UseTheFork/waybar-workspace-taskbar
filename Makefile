@@ -29,7 +29,10 @@ run_interactive:
 	GTK_DEBUG=interactive waybar -c $(LOCAL_DIR)/config.jsonc -s $(LOCAL_DIR)/style.css
 
 valgrind: $(EXECUTABLE)
-	valgrind --leak-check=full \
+	valgrind \
+		--suppressions=/usr/share/gtk-3.0/valgrind/gtk.supp \
+        --suppressions=/usr/share/glib-2.0/valgrind/glib.supp \
+		--leak-check=full \
 		--track-origins=yes \
 		--show-leak-kinds=definite \
 		--errors-for-leak-kinds=definite \
