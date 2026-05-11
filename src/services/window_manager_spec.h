@@ -2,7 +2,7 @@
 
 #include <gtk/gtk.h>
 
-G_BEGIN_DECLS;
+G_BEGIN_DECLS
 
 typedef struct _WindowManagerData WindowManagerData;
 typedef struct WindowManagerEvent WindowManagerEvent;
@@ -65,4 +65,4 @@ WindowManagerDataFetcher window_manager_spec_get_data_fetcher(
 WindowManagerSpec *window_manager_spec_create(WindowManagerId wm_id);
 void window_manager_spec_destroy(WindowManagerSpec *spec);
 
-G_END_DECLS;
+G_END_DECLS

@@ -2,7 +2,7 @@
 
 #include <gtk/gtk.h>
 
-G_BEGIN_DECLS;
+G_BEGIN_DECLS
 
 #define WM_EVENTS_MAX_CALlBACKS 8
 
@@ -38,4 +38,4 @@ int window_manager_events_subscribe(
 
 int window_manager_events_unsubscribe(WindowManagerEvents *events, int pos);
 
-G_END_DECLS;
+G_END_DECLS

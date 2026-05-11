@@ -3,7 +3,7 @@
 #include "wbcffi.h"
 #include <gtk/gtk.h>
 
-G_BEGIN_DECLS;
+G_BEGIN_DECLS
 
 typedef enum WindowManagerId WindowManagerId;
 typedef enum NavigationBtnPos NavigationBtnPos;
@@ -36,4 +36,4 @@ WwtConfig *wwt_config_new(
     size_t config_entries_len
 );
 
-G_END_DECLS;
+G_END_DECLS

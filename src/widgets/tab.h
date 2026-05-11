@@ -3,7 +3,7 @@
 #include "core/app.h"
 #include <gtk/gtk.h>
 
-G_BEGIN_DECLS;
+G_BEGIN_DECLS
 
 #define WWT_TAB_TYPE (wwt_tab_get_type())
 G_DECLARE_FINAL_TYPE(WwtTab, wwt_tab, WWT, TAB, GtkButton)
@@ -32,4 +32,4 @@ void wwt_tab_update(
     int y
 );
 
-G_END_DECLS;
+G_END_DECLS

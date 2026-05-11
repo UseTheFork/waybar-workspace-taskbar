@@ -2,7 +2,7 @@
 
 #include <gtk/gtk.h>
 
-G_BEGIN_DECLS;
+G_BEGIN_DECLS
 
 typedef struct _WindowManagerData WindowManagerData;
 typedef struct _WindowManagerWorkspace WindowManagerWorkspace;
@@ -57,4 +57,4 @@ void window_manager_data_sort_windows(
 
 void window_manager_data_set_focused_workspace(WindowManagerData *self, int id);
 
-G_END_DECLS;
+G_END_DECLS

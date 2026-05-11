@@ -2,7 +2,7 @@
 
 #include <gtk/gtk.h>
 
-G_BEGIN_DECLS;
+G_BEGIN_DECLS
 
 typedef struct WindowManagerSpec WindowManagerSpec;
 typedef struct _WindowManagerEvents WindowManagerEvents;
@@ -18,4 +18,4 @@ WindowManagerEvents *wwt_services_get_window_manager_events(WwtServices *self);
 WindowManagerSpec *wwt_services_get_window_manager_spec(WwtServices *self);
 AppIcons *wwt_services_get_app_icons(WwtServices *self);
 
-G_END_DECLS;
+G_END_DECLS

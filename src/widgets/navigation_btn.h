@@ -3,7 +3,7 @@
 #include "taskbar.h"
 #include <gtk/gtk.h>
 
-G_BEGIN_DECLS;
+G_BEGIN_DECLS
 
 #define WWT_NAVIGATION_BUTTON_TYPE (wwt_navigation_btn_get_type())
 G_DECLARE_FINAL_TYPE(
@@ -37,4 +37,4 @@ WwtNavigationBtn *wwt_navigation_btn_new(
     NavigationBtnType type
 );
 
-G_END_DECLS;
+G_END_DECLS

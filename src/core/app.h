@@ -3,7 +3,7 @@
 #include "wbcffi.h"
 #include <gtk/gtk.h>
 
-G_BEGIN_DECLS;
+G_BEGIN_DECLS
 
 typedef struct _WwtTaskbar WwtTaskbar;
 typedef struct _WwtConfig WwtConfig;
@@ -23,4 +23,4 @@ WwtTaskbar *wwt_app_get_taskbar(WwtApp *self);
 WwtConfig *wwt_app_get_config(WwtApp *self);
 WwtServices *wwt_app_get_services(WwtApp *self);
 
-G_END_DECLS;
+G_END_DECLS
