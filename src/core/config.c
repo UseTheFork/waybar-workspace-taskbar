@@ -1,5 +1,6 @@
 #include "config.h"
 #include "core/app.h"
+#include "glib.h"
 #include "json-glib/json-glib.h"
 #include "services/window_manager_spec.h"
 #include "utils.h"
@@ -172,20 +173,25 @@ static void parse_config_entries(
         const char *key = config_entries[i].key;
         const char *value = config_entries[i].value;
 
-        JsonParser *parser = create_json_parser(value);
-
+        g_autoptr(JsonParser) parser = create_json_parser(value);
         if(!parser) {
             continue;
         }
 
         JsonNode *node = json_parser_get_root(parser);
 
+        if(strcmp("module_path", key) == 0) {
+            continue;
+        }
+
         if(strcmp("output", key) == 0) {
             const char *output = json_node_get_string(node);
             self->output = g_strdup(output);
+
+            continue;
         }
 
-        if(strcmp("window_manager", key) == 0) {
+        if(strcmp("window-manager", key) == 0) {
             const char *window_manager = json_node_get_string(node);
 
             if(strcmp("sway", window_manager) == 0) {
@@ -202,9 +208,11 @@ static void parse_config_entries(
                     window_manager
                 );
             }
+
+            continue;
         }
 
-        if(strcmp("show_title", key) == 0) {
+        if(strcmp("show-title", key) == 0) {
             int show_title = json_node_get_boolean(node);
 
             if(show_title) {
@@ -212,9 +220,11 @@ static void parse_config_entries(
             } else {
                 self->show_title = FALSE;
             }
+
+            continue;
         }
 
-        if(strcmp("show_tooltip", key) == 0) {
+        if(strcmp("show-tooltip", key) == 0) {
             int show_tooltip = json_node_get_boolean(node);
 
             if(show_tooltip) {
@@ -222,9 +232,11 @@ static void parse_config_entries(
             } else {
                 self->show_tooltip = FALSE;
             }
+
+            continue;
         }
 
-        if(strcmp("show_icon", key) == 0) {
+        if(strcmp("show-icon", key) == 0) {
             int show_icon = json_node_get_boolean(node);
 
             if(show_icon) {
@@ -232,25 +244,31 @@ static void parse_config_entries(
             } else {
                 self->show_icon = FALSE;
             }
+
+            continue;
         }
 
-        if(strcmp("max_tabs", config_entries[i].key) == 0) {
+        if(strcmp("max-tabs", config_entries[i].key) == 0) {
             int max_tabs = json_node_get_int(node);
 
             if(max_tabs > 0) {
                 self->max_tabs = max_tabs;
             }
+
+            continue;
         }
 
-        if(strcmp("title_max_chars", config_entries[i].key) == 0) {
+        if(strcmp("title-max-chars", config_entries[i].key) == 0) {
             int title_max_chars = json_node_get_int(node);
 
             if(title_max_chars > 3) {
                 self->title_max_chars = title_max_chars;
             }
+
+            continue;
         }
 
-        if(strcmp("text_align", config_entries[i].key) == 0) {
+        if(strcmp("text-align", config_entries[i].key) == 0) {
             const char *text_align = json_node_get_string(node);
 
             if(strcmp("left", text_align) == 0) {
@@ -260,17 +278,21 @@ static void parse_config_entries(
             } else {
                 self->text_align = TAB_TEXT_ALIGN_CENTER;
             }
+
+            continue;
         }
 
-        if(strcmp("icon_size", config_entries[i].key) == 0) {
+        if(strcmp("icon-size", config_entries[i].key) == 0) {
             int icon_size = json_node_get_int(node);
 
             if(icon_size > 0) {
                 self->icon_size = icon_size;
             }
+
+            continue;
         }
 
-        if(strcmp("show_navigation_btns", key) == 0) {
+        if(strcmp("show-navigation-btns", key) == 0) {
             int show_navigation_btns = json_node_get_int(node);
 
             if(show_navigation_btns == NAVIGATION_BTN_DISPLAY_TYPE_OVERFLOW) {
@@ -283,9 +305,11 @@ static void parse_config_entries(
             } else {
                 self->show_navigation_btns = NAVIGATION_BTN_DISPLAY_TYPE_NEVER;
             }
+
+            continue;
         }
 
-        if(strcmp("navigation_btn_pos", config_entries[i].key) == 0) {
+        if(strcmp("navigation-btn-pos", config_entries[i].key) == 0) {
             const char navigation_btn_pos = json_node_get_int(node);
 
             if(navigation_btn_pos == NAVIGATION_BTN_POS_BEFORE) {
@@ -295,25 +319,31 @@ static void parse_config_entries(
             } else {
                 self->navigation_btn_pos = NAVIGATION_BTN_POS_STAGGERED;
             }
+
+            continue;
         }
 
-        if(strcmp("navigation_btn_prev_label", config_entries[i].key) == 0) {
+        if(strcmp("navigation-btn-prev-label", config_entries[i].key) == 0) {
             const char *navigation_btn_prev_label = json_node_get_string(node);
 
             g_free(self->navigation_btn_prev_label);
             self->navigation_btn_prev_label =
                 g_strdup(navigation_btn_prev_label);
+
+            continue;
         }
 
-        if(strcmp("navigation_btn_next_label", config_entries[i].key) == 0) {
+        if(strcmp("navigation-btn-next-label", config_entries[i].key) == 0) {
             const char *navigation_btn_next_label = json_node_get_string(node);
 
             g_free(self->navigation_btn_next_label);
             self->navigation_btn_next_label =
                 g_strdup(navigation_btn_next_label);
+
+            continue;
         }
 
-        g_object_unref(parser);
+        g_warning("Waybar Workspace Taskbar: Unknown config option %s", key);
     }
 }
 

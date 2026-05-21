@@ -51,7 +51,7 @@ Minimal example:
 ],
 "cffi/waybar-workspace-taskbar": {
     "module_path": "~/.config/waybar/cffi/waybar-workspace-taskbar.so",
-    "window_manager": "sway"
+    "window-manager": "sway"
 }
 ```
 
@@ -63,21 +63,24 @@ Note: You may need to use absolute paths depending on your environment.
 
 Even though your using jsonc waybar doesn't parse out the comments when passing them to the cffi module. So as of right now keep your comments outside the cffi module config.
 
-| Keys                      | Required | Default  | Allowed                                  | Description                                                                                                                                           |
+Options use `kebab-case` for spaces to follow most of the waybar convention. But it should be noted that `module_path` is a waybar specific option that uses `snake_case`.
+
+| Options                   | Required | Default  | Allowed                                  | Description                                                                                                                                           |
 | ------------------------- | -------- | -------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| window_manager            | yes      | NULL     | "sway", "hyprland", "niri"               | The window manager you are currently using.                                                                                                           |
+| module_path               | yes      | NULL     | string                                   | The path to this modules `.so` file.                                                                                                                  |
+| window-manager            | yes      | NULL     | "sway", "hyprland", "niri"               | The window manager you are currently using.                                                                                                           |
 | output                    | no       | NULL     | true, false                              | The monitor you want to bind to. If no output is set then it defaults to showing the focused workspace.                                               |
-| show_icon                 | no       | true     | true, false                              | Whether or not you want to show the application icon.                                                                                                 |
-| show_title                | no       | false    | true, false                              | Whether or not you want to show the window title.                                                                                                     |
-| show_tooltip              | no       | false    | true, false                              | Whether or not you want to show a tooltip when hovering on the tab.                                                                                   |
-| text_align                | no       | "center" | "left", "right", "center"                | Position of the text and icon in the tab.                                                                                                             |
-| max_tabs                  | no       | -1       | int                                      | Max amount of tabs to show -1 for unlimited. (See css configuration below to show the overflow indicator)                                             |
-| title_max_chars           | no       | -1       | int > 3                                  | Max amount of characters to show in the title, -1 for unlimited. (Note: this includes elipsis so if you set to 10, 3 of those characters will be ...) |
-| icon_size                 | no       | 16       | int > 0                                  | The size of the app icon to be displayed. (Note: icon aspect ratio is 1:1 so default is 16x16)                                                        |
-| show_navigation_btns      | no       | 0        | 0 = never, 1 = overlfow only, 2 = always | Whether or not to show navigation buttons. Navigation buttons switch focus prev and next.                                                             |
-| navigation_btn_pos        | no       | 0        | 0 = staggered, 1 = before, 2 = after     | Position of the navigation buttons. Before tabs, after tabs, or staggered one on each side.                                                           |
-| navigation_btn_prev_label | no       | "<"      | string                                   | The label for the navigation prev button.                                                                                                             |
-| navigation_btn_next_label | no       | ">"      | string                                   | The label for the navigation next button.                                                                                                             |
+| show-icon                 | no       | true     | true, false                              | Whether or not you want to show the application icon.                                                                                                 |
+| show-title                | no       | false    | true, false                              | Whether or not you want to show the window title.                                                                                                     |
+| show-tooltip              | no       | false    | true, false                              | Whether or not you want to show a tooltip when hovering on the tab.                                                                                   |
+| text-align                | no       | "center" | "left", "right", "center"                | Position of the text and icon in the tab.                                                                                                             |
+| max-tabs                  | no       | -1       | int                                      | Max amount of tabs to show -1 for unlimited. (See css configuration below to show the overflow indicator)                                             |
+| title-max-chars           | no       | -1       | int > 3                                  | Max amount of characters to show in the title, -1 for unlimited. (Note: this includes elipsis so if you set to 10, 3 of those characters will be ...) |
+| icon-size                 | no       | 16       | int > 0                                  | The size of the app icon to be displayed. (Note: icon aspect ratio is 1:1 so default is 16x16)                                                        |
+| show-navigation-btns      | no       | 0        | 0 = never, 1 = overlfow only, 2 = always | Whether or not to show navigation buttons. Navigation buttons switch focus prev and next.                                                             |
+| navigation-btn-pos        | no       | 0        | 0 = staggered, 1 = before, 2 = after     | Position of the navigation buttons. Before tabs, after tabs, or staggered one on each side.                                                           |
+| navigation-btn-prev-label | no       | "<"      | string                                   | The label for the navigation prev button.                                                                                                             |
+| navigation-btn-next-label | no       | ">"      | string                                   | The label for the navigation next button.                                                                                                             |
 
 ### Configuring Styles
 
