@@ -63,7 +63,7 @@ Note: You may need to use absolute paths depending on your environment.
 
 Even though your using jsonc waybar doesn't parse out the comments when passing them to the cffi module. So as of right now keep your comments outside the cffi module config.
 
-Options use `kebab-case` in key names for spaces to follow most of the waybar convention. But it should be noted that `module_path` is a waybar specific option that uses `snake_case`.
+Options use `kebab-case` in key names for spaces to follow most of the waybar convention. It should be noted that `module_path` is a waybar specific option that uses `snake_case`.
 
 | Option                    | Required | Default  | Allowed                                  | Description                                                                                                                                           |
 | ------------------------- | -------- | -------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
