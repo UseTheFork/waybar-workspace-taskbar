@@ -65,7 +65,7 @@ Even though your using jsonc waybar doesn't parse out the comments when passing 
 
 Options use `kebab-case` in key names for spaces to follow most of the waybar convention. But it should be noted that `module_path` is a waybar specific option that uses `snake_case`.
 
-| Options                   | Required | Default  | Allowed                                  | Description                                                                                                                                           |
+| Option                    | Required | Default  | Allowed                                  | Description                                                                                                                                           |
 | ------------------------- | -------- | -------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | module_path               | yes      | NULL     | string                                   | The path to this modules `.so` file.                                                                                                                  |
 | window-manager            | yes      | NULL     | "sway", "hyprland", "niri"               | The window manager you are currently using.                                                                                                           |
