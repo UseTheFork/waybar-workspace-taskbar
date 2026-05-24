@@ -11,7 +11,8 @@ src_files = files(
   'src/core/app.c',
   'src/core/config.c',
   'src/core/services.c',
-  'src/core/utils.c',
+  'src/utils/cmd.c',
+  'src/utils/common.c',
   'src/core/window_manager_data.c',
   'src/services/app_icons.c',
   'src/services/window_manager_events.c',
@@ -22,7 +23,6 @@ src_files = files(
   'src/window_managers/niri.c',
   'src/window_managers/hyprland.c',
   'src/window_managers/sway.c',
-  'src/window_managers/common.c'
 ) 
 
 shared_library('waybar-workspace-taskbar',

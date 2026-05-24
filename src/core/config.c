@@ -3,7 +3,7 @@
 #include "glib.h"
 #include "json-glib/json-glib.h"
 #include "services/window_manager_spec.h"
-#include "utils.h"
+#include "utils/common.h"
 #include "widgets/navigation_btn.h"
 #include <stdlib.h>
 #include <string.h>
@@ -24,6 +24,10 @@ struct _WwtConfig {
     NavigationBtnPos navigation_btn_pos;
     gchar *navigation_btn_prev_label;
     gchar *navigation_btn_next_label;
+    gchar *on_click;
+    gchar *on_click_middle;
+    gchar *on_click_right;
+    gchar *navigation_btn_on_click;
 };
 
 G_DEFINE_TYPE(WwtConfig, wwt_config, G_TYPE_OBJECT);
@@ -156,6 +160,46 @@ gchar *wwt_config_get_navigation_btn_next_label(WwtConfig *self) {
  */
 NavigationBtnPos wwt_config_get_navigation_btn_pos(WwtConfig *self) {
     return self->navigation_btn_pos;
+}
+
+/**
+ * Gets the on_click value
+ *
+ * @param self
+ * @return The on_click value
+ */
+gchar *wwt_config_get_on_click(WwtConfig *self) {
+    return self->on_click;
+}
+
+/**
+ * Gets the on_click_middle value
+ *
+ * @param self
+ * @return The on_click_middle value
+ */
+gchar *wwt_config_get_on_click_middle(WwtConfig *self) {
+    return self->on_click_middle;
+}
+
+/**
+ * Gets the on_click_right value
+ *
+ * @param self
+ * @return The on_click_right value
+ */
+gchar *wwt_config_get_on_click_right(WwtConfig *self) {
+    return self->on_click_right;
+}
+
+/**
+ * Gets the navigation_btn_on_click value
+ *
+ * @param self
+ * @return The navigation_btn_on_click value
+ */
+gchar *wwt_config_get_navigation_btn_on_click(WwtConfig *self) {
+    return self->navigation_btn_on_click;
 }
 
 /**
@@ -343,6 +387,34 @@ static void parse_config_entries(
             continue;
         }
 
+        if(strcmp("on-click", key) == 0) {
+            const char *on_click = json_node_get_string(node);
+            self->on_click = g_strdup(on_click);
+
+            continue;
+        }
+
+        if(strcmp("on-click-middle", key) == 0) {
+            const char *on_click_middle = json_node_get_string(node);
+            self->on_click_middle = g_strdup(on_click_middle);
+
+            continue;
+        }
+
+        if(strcmp("on-click-right", key) == 0) {
+            const char *on_click_right = json_node_get_string(node);
+            self->on_click_right = g_strdup(on_click_right);
+
+            continue;
+        }
+
+        if(strcmp("navigation-btn-on-click", key) == 0) {
+            const char *navigation_btn_on_click = json_node_get_string(node);
+            self->navigation_btn_on_click = g_strdup(navigation_btn_on_click);
+
+            continue;
+        }
+
         g_warning("Waybar Workspace Taskbar: Unknown config option %s", key);
     }
 }
@@ -355,20 +427,13 @@ static void parse_config_entries(
 static void dispose(GObject *obj) {
     WwtConfig *self = WWT_CONFIG(obj);
 
-    if(self->output) {
-        g_free(self->output);
-        self->output = NULL;
-    }
-
-    if(self->navigation_btn_prev_label) {
-        g_free(self->navigation_btn_prev_label);
-        self->navigation_btn_prev_label = NULL;
-    }
-
-    if(self->navigation_btn_next_label) {
-        g_free(self->navigation_btn_next_label);
-        self->navigation_btn_next_label = NULL;
-    }
+    g_clear_pointer(&self->output, g_free);
+    g_clear_pointer(&self->navigation_btn_prev_label, g_free);
+    g_clear_pointer(&self->navigation_btn_next_label, g_free);
+    g_clear_pointer(&self->on_click, g_free);
+    g_clear_pointer(&self->on_click_middle, g_free);
+    g_clear_pointer(&self->on_click_right, g_free);
+    g_clear_pointer(&self->navigation_btn_on_click, g_free);
 
     G_OBJECT_CLASS(wwt_config_parent_class)->dispose(obj);
 }
@@ -402,6 +467,10 @@ static void wwt_config_init(WwtConfig *self) {
     self->navigation_btn_pos = NAVIGATION_BTN_POS_STAGGERED;
     self->navigation_btn_prev_label = g_strdup("<");
     self->navigation_btn_next_label = g_strdup(">");
+    self->on_click = NULL;
+    self->on_click_middle = NULL;
+    self->on_click_right = NULL;
+    self->navigation_btn_on_click = NULL;
 }
 
 /**

@@ -30,6 +30,10 @@ gboolean wwt_config_get_show_navigation_btns(WwtConfig *self);
 gchar *wwt_config_get_navigation_btn_prev_label(WwtConfig *self);
 gchar *wwt_config_get_navigation_btn_next_label(WwtConfig *self);
 NavigationBtnPos wwt_config_get_navigation_btn_pos(WwtConfig *self);
+gchar *wwt_config_get_on_click(WwtConfig *self);
+gchar *wwt_config_get_on_click_middle(WwtConfig *self);
+gchar *wwt_config_get_on_click_right(WwtConfig *self);
+gchar *wwt_config_get_navigation_btn_on_click(WwtConfig *self);
 
 WwtConfig *wwt_config_new(
     const wbcffi_config_entry *config_entries,

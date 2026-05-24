@@ -21,8 +21,8 @@ typedef enum NavigationBtnDisplayType {
 } NavigationBtnDisplayType;
 
 typedef enum NavigationBtnType {
-    NAVIGATION_BTN_TYPE_START,
-    NAVIGATION_BTN_TYPE_END
+    NAVIGATION_BTN_TYPE_PREV,
+    NAVIGATION_BTN_TYPE_NEXT
 } NavigationBtnType;
 
 typedef enum NavigationBtnPos {

@@ -1,10 +1,10 @@
 #include "niri.h"
-#include "common.h"
-#include "core/utils.h"
 #include "core/window_manager_data.h"
 #include "glib.h"
 #include "services/window_manager_events.h"
 #include "services/window_manager_spec.h"
+#include "utils/cmd.h"
+#include "utils/common.h"
 #include <stdio.h>
 
 /**
@@ -85,39 +85,6 @@ static gboolean events_validator(WindowManagerEvent *event) {
 }
 
 /**
- * Click handler to focus the window
- *
- * @param id The window id
- * @return Whether the command was successfully executed
- */
-static gboolean window_focus(const char *id) {
-    return wm_click_execute("niri msg action focus-window --id %s", id);
-}
-
-/**
- * Click handler to close the window
- *
- * @param id The window id
- * @return Whether the command was successfully executed
- */
-static gboolean window_close(const char *id) {
-    return wm_click_execute("niri msg action close-window --id %s", id);
-}
-
-/**
- * Click handler to toggle float the window
- *
- * @param id The window id
- * @return Whether the command was successfully executed
- */
-static gboolean window_float(const char *id) {
-    return wm_click_execute(
-        "niri msg action toggle-window-floating --id %s",
-        id
-    );
-}
-
-/**
  * Called when sorting the windows. Sort from left to right top to
  * bottom. Sort all floating windows to end.
  *
@@ -148,7 +115,7 @@ static int window_sort(gconstpointer a, gconstpointer b) {
 static WindowManagerData *data_fetcher() {
     WindowManagerData *wm_data = window_manager_data_create();
 
-    char *ws_json = cmd_output("niri msg -j workspaces");
+    char *ws_json = cmd_run_output("niri msg -j workspaces");
     if(!ws_json) {
         window_manager_data_destroy(wm_data);
         return NULL;
@@ -191,7 +158,7 @@ static WindowManagerData *data_fetcher() {
         );
     }
 
-    char *win_json = cmd_output("niri msg -j windows");
+    char *win_json = cmd_run_output("niri msg -j windows");
     if(!win_json) {
         g_object_unref(ws_parser);
         g_free(ws_json);
@@ -291,9 +258,6 @@ WindowManagerSpec *window_manager_spec_create_niri() {
     spec->events_reader = events_reader;
     spec->events_validator = events_validator;
     spec->data_fetcher = data_fetcher;
-    spec->window_focus = window_focus;
-    spec->window_close = window_close;
-    spec->window_float = window_float;
 
     return spec;
 }

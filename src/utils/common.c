@@ -1,57 +1,7 @@
-#include "utils.h"
-#include "glib.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "common.h"
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <unistd.h>
-
-/**
- * Send a command no output
- *
- * @param cmd The command to send
- * @return The return value of system()
- */
-int cmd_send(const char *cmd) {
-    return system(cmd);
-}
-
-/**
- * Send a command and get the output
- *
- * @param cmd The command to send
- * @return (transfer full): The output
- */
-char *cmd_output(const char *cmd) {
-    FILE *fp = popen(cmd, "r");
-
-    if(!fp) {
-        return NULL;
-    }
-
-    size_t size = 4096;
-    char *buf = g_malloc(size);
-    size_t len = 0;
-    char tmp[256];
-
-    while(fgets(tmp, sizeof(tmp), fp)) {
-        size_t chunk = strlen(tmp);
-
-        if(len + chunk + 1 > size) {
-            size *= 2;
-            buf = g_realloc(buf, size);
-        }
-
-        memcpy(buf + len, tmp, chunk);
-        len += chunk;
-    }
-
-    buf[len] = '\0';
-    pclose(fp);
-
-    return buf;
-}
+#include <time.h>
 
 /**
  * Connect to a socket
@@ -113,4 +63,20 @@ long long get_timestamp() {
     long long ms = (long long)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 
     return ms;
+}
+
+/**
+ * Creates a new string and replaces the characters specified
+ *
+ * @param str The string you want to be replaced
+ * @param find The characters to find
+ * @param replace The characters you want to replace with
+ * @return (transfer full) A new string with the characters replaced (caller
+ * frees using g_free())
+ */
+gchar *str_replace(const char *str, const char *find, const char *replace) {
+    GString *g_str = g_string_new(str);
+    g_string_replace(g_str, find, replace, 0);
+
+    return g_string_free(g_str, FALSE);
 }

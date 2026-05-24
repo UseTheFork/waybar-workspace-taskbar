@@ -52,32 +52,6 @@ WindowManagerEventsValidator window_manager_spec_get_events_validator(
 }
 
 /**
- * Gets the click handler from the the window manager based on type
- *
- * @param self
- * @param type The click handler type
- * @return The click handler from window manager spec
- */
-WindowManagerClickHandler window_manager_spec_get_click_handler(
-    WindowManagerSpec *self,
-    WindowManagerClickHandlerType type
-) {
-    if(type == WM_CLICK_FOCUS) {
-        return self->window_focus;
-    }
-
-    if(type == WM_CLICK_CLOSE) {
-        return self->window_close;
-    }
-
-    if(type == WM_CLICK_FLOAT) {
-        return self->window_float;
-    }
-
-    return NULL;
-}
-
-/**
  * Gets the data_fetcher
  *
  * @param self

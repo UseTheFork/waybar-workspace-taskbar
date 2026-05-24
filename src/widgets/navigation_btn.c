@@ -1,6 +1,8 @@
 #include "navigation_btn.h"
 #include "core/app.h"
 #include "core/config.h"
+#include "utils/cmd.h"
+#include "utils/common.h"
 
 struct _WwtNavigationBtn {
     GtkButton parent_instance;
@@ -22,11 +24,27 @@ G_DEFINE_TYPE(WwtNavigationBtn, wwt_navigation_btn, GTK_TYPE_BUTTON);
  */
 static void handle_click(gpointer user_data) {
     WwtNavigationBtn *self = user_data;
+    WwtConfig *config = wwt_app_get_config(self->app);
+    const char *navigation_btn_on_click =
+        wwt_config_get_navigation_btn_on_click(config);
 
-    if(self->type == NAVIGATION_BTN_TYPE_START) {
-        wwt_taskbar_shift_focus(self->taskbar, TASKBAR_FOCUS_PREV);
+    if(self->type == NAVIGATION_BTN_TYPE_PREV) {
+        gchar *win_id = wwt_taskbar_get_focus_win_id(self->taskbar, -1);
+
+        if(win_id) {
+            g_autofree gchar *cmd =
+                str_replace(navigation_btn_on_click, "{id}", win_id);
+            cmd_run_fork_exec(cmd);
+        }
+
     } else {
-        wwt_taskbar_shift_focus(self->taskbar, TASKBAR_FOCUS_NEXT);
+        gchar *win_id = wwt_taskbar_get_focus_win_id(self->taskbar, 1);
+
+        if(win_id) {
+            g_autofree gchar *cmd =
+                str_replace(navigation_btn_on_click, "{id}", win_id);
+            cmd_run_fork_exec(cmd);
+        }
     }
 }
 
@@ -41,7 +59,7 @@ static void setup_widget(WwtNavigationBtn *self) {
         wwt_config_get_show_navigation_btns(config);
 
     GtkStyleContext *ctx = gtk_widget_get_style_context(GTK_WIDGET(self));
-    if(self->type == NAVIGATION_BTN_TYPE_START) {
+    if(self->type == NAVIGATION_BTN_TYPE_PREV) {
         gtk_style_context_add_class(ctx, NAVIGATION_BTN_PREV_CLASS_NAME);
     } else {
         gtk_style_context_add_class(ctx, NAVIGATION_BTN_NEXT_CLASS_NAME);
@@ -116,7 +134,7 @@ WwtNavigationBtn *wwt_navigation_btn_new(
     const gchar *navigation_btn_next_label =
         wwt_config_get_navigation_btn_next_label(config);
 
-    const char *label = type == NAVIGATION_BTN_TYPE_START
+    const char *label = type == NAVIGATION_BTN_TYPE_PREV
                             ? navigation_btn_prev_label
                             : navigation_btn_next_label;
 

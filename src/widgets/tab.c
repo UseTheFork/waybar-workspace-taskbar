@@ -3,7 +3,8 @@
 #include "core/config.h"
 #include "core/services.h"
 #include "services/app_icons.h"
-#include "services/window_manager_spec.h"
+#include "utils/cmd.h"
+#include "utils/common.h"
 #include <gio/gdesktopappinfo.h>
 
 #define TAB_CLASS_NAME "tab"
@@ -149,39 +150,39 @@ static gboolean on_button_press(
     GdkEventButton *event,
     gpointer user_data
 ) {
-    WwtTab *tab = WWT_TAB(widget);
-    WwtServices *services = wwt_app_get_services(tab->app);
-
-    if(!services) {
-        return TRUE;
-    }
-
-    WindowManagerSpec *spec = wwt_services_get_window_manager_spec(services);
-
-    if(!spec) {
-        return TRUE;
-    }
-
-    WindowManagerClickHandler window_focus =
-        window_manager_spec_get_click_handler(spec, WM_CLICK_FOCUS);
-    WindowManagerClickHandler window_close =
-        window_manager_spec_get_click_handler(spec, WM_CLICK_CLOSE);
-    WindowManagerClickHandler window_float =
-        window_manager_spec_get_click_handler(spec, WM_CLICK_FLOAT);
+    WwtTab *self = WWT_TAB(widget);
+    WwtConfig *config = wwt_app_get_config(self->app);
 
     // Left click
     if(event->button == 1) {
-        window_focus(tab->win_id);
+        const char *on_click = wwt_config_get_on_click(config);
+
+        if(on_click) {
+            g_autofree gchar *cmd = str_replace(on_click, "{id}", self->win_id);
+            cmd_run_fork_exec(cmd);
+        }
     }
 
     // Middle click
     if(event->button == 2) {
-        window_float(tab->win_id);
+        const char *on_click_middle = wwt_config_get_on_click_middle(config);
+
+        if(on_click_middle) {
+            g_autofree gchar *cmd =
+                str_replace(on_click_middle, "{id}", self->win_id);
+            cmd_run_fork_exec(cmd);
+        }
     }
 
     // Right click
     if(event->button == 3) {
-        window_close(tab->win_id);
+        const char *on_click_right = wwt_config_get_on_click_right(config);
+
+        if(on_click_right) {
+            g_autofree gchar *cmd =
+                str_replace(on_click_right, "{id}", self->win_id);
+            cmd_run_fork_exec(cmd);
+        }
     }
 
     return TRUE; // Stop propogation

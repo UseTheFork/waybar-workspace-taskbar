@@ -11,6 +11,10 @@ setup:
 build: $(BUILD_DIR)/build.ninja
 	ninja -C $(BUILD_DIR)
 
+build_debug: $(BUILD_DIR)/build.ninja
+	meson configure $(BUILD_DIR) -Dbuildtype=debug
+	ninja -C $(BUILD_DIR)
+
 $(BUILD_DIR)/build.ninja:
 	meson setup $(BUILD_DIR)
 

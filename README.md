@@ -18,8 +18,9 @@ Currently supported window managers.
 
 ## Building and Installation
 
-You must have some required packages installed. Look to your package manager for the correct installation of each.
+You must be on linux and have some required packages installed. Look to your package manager for the correct installation of each.
 
+- c compiler (Gcc/Clang)
 - make
 - meson
 - gtk+-3.0 version >=3.22.0
@@ -63,7 +64,7 @@ Note: You may need to use absolute paths depending on your environment.
 
 Even though your using jsonc waybar doesn't parse out the comments when passing them to the cffi module. So as of right now keep your comments outside the cffi module config.
 
-Options use `kebab-case` in key names for spaces to follow most of the waybar convention. It should be noted that `module_path` is a waybar specific option that uses `snake_case`.
+Options use `kebab-case` in key names for spaces to follow most of the waybar convention. Although `module_path` is a waybar specific option that uses `snake_case`.
 
 | Option                    | Required | Default  | Allowed                                  | Description                                                                                                                                           |
 | ------------------------- | -------- | -------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -81,6 +82,55 @@ Options use `kebab-case` in key names for spaces to follow most of the waybar co
 | navigation-btn-pos        | no       | 0        | 0 = staggered, 1 = before, 2 = after     | Position of the navigation buttons. Before tabs, after tabs, or staggered one on each side.                                                           |
 | navigation-btn-prev-label | no       | "<"      | string                                   | The label for the navigation prev button.                                                                                                             |
 | navigation-btn-next-label | no       | ">"      | string                                   | The label for the navigation next button.                                                                                                             |
+| on-click                  | no       | NULL     | string                                   | The command to run when left clicking a tab. See [Configuring Click Actions](#configuring-click-actions)                                              |
+| on-click-middle           | no       | NULL     | string                                   | The command to run when middle clicking a tab. See [Configuring Click Actions](#configuring-click-actions)                                            |
+| on-click-right            | no       | NULL     | string                                   | The command to run when right clicking a tab. See [Configuring Click Actions](#configuring-click-actions)                                             |
+| navigation-btn-on-click   | no       | NULL     | string                                   | The command to run when left clicking a navigation button. See [Configuring Click Actions](#configuring-click-actions)                                |
+
+### Configuring Click Actions
+
+Click actions are commands you can run on certain clicks. The window id will be passed in via a replace character `{id}`. Each command will be forked to a new process. Here are some common examples.
+
+Hyprland Lua
+
+```json
+{
+  "on-click": "hyprctl dispatch 'hl.dsp.focus({window=\"address:{id}\"})'",
+  "on-click-middle": "hyprctl dispatch 'hl.dsp.window.float({action=\"toggle\",window=\"address:{id}\"})'",
+  "on-click-right": "hyprctl dispatch 'hl.dsp.window.close({window=\"address:{id}\"})'",
+  "navigation-btn-on-click": "hyprctl dispatch 'hl.dsp.focus({window=\"address:{id}\"})'"
+}
+```
+
+Niri
+
+```json
+{
+  "on-click": "niri msg action focus-window --id {id}",
+  "on-click-middle": "niri msg action toggle-window-floating --id {id}",
+  "on-click-right": "niri msg action close-window --id {id}",
+  "navigation-btn-on-click": "niri msg action focus-window --id {id}"
+}
+```
+
+Sway
+
+```json
+{
+  "on-click": "swaymsg \"[con_id={id}] focus\"",
+  "on-click-middle": "swaymsg \"[con_id={id}] floating toggle\"",
+  "on-click-right": "swaymsg \"[con_id={id}] kill\"",
+  "navigation-btn-on-click": "swaymsg \"[con_id={id}] focus\""
+}
+```
+
+you may also pass in custom scripts like:
+
+```json
+{
+  "on-click": "~/path/to/my/script {id}"
+}
+```
 
 ### Configuring Styles
 
@@ -141,14 +191,6 @@ The css parent/child structure is as follows:
   <NavigationBtnNext />
 </Taskbar>
 ```
-
-## Usage
-
-This is fairly simple.
-
-- Left Click: Focus Window
-- Right Click: Close Window
-- Middle Click: Toggle Float
 
 ## Known issues
 

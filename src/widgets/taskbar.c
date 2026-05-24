@@ -3,7 +3,6 @@
 #include "core/config.h"
 #include "core/services.h"
 #include "core/window_manager_data.h"
-#include "glibconfig.h"
 #include "navigation_btn.h"
 #include "services/window_manager_events.h"
 #include "services/window_manager_spec.h"
@@ -123,46 +122,36 @@ static GPtrArray *get_display_windows(WwtTaskbar *self) {
     WwtConfig *config = wwt_app_get_config(self->app);
     const gchar *output = wwt_config_get_output(config);
 
-    GPtrArray *wins = NULL;
     if(output) {
-        wins = window_manager_data_get_windows_on_output(self->wm_data, output);
-    } else {
-        wins = window_manager_data_get_windows_on_focused(self->wm_data);
+        return window_manager_data_get_windows_on_output(self->wm_data, output);
     }
 
-    return wins;
+    return window_manager_data_get_windows_on_focused(self->wm_data);
 }
 
 /**
- * Focus the next window in the list
+ * Gets the focused window id
  *
  * @param self
+ * @param offset The offset from the focused window eg. 1 = next, -1 = prev, 0 =
+ * current focused.
+ * @returns (transfer none): The window id
  */
-void wwt_taskbar_shift_focus(
-    WwtTaskbar *self,
-    TaskbarFocusDirection direction
-) {
-    WwtServices *services = wwt_app_get_services(self->app);
-    WindowManagerSpec *spec = wwt_services_get_window_manager_spec(services);
-    WindowManagerClickHandler focus_window =
-        window_manager_spec_get_click_handler(spec, WM_CLICK_FOCUS);
+gchar *wwt_taskbar_get_focus_win_id(WwtTaskbar *self, int offset) {
     GPtrArray *wins = get_display_windows(self);
 
     if(!wins || wins->len == 0) {
-        return;
+        return NULL;
     }
 
-    int focused_index = get_focused_index(self, wins);
-    int index = 0;
-
-    if(direction == TASKBAR_FOCUS_NEXT) {
-        index = CLAMP(focused_index + 1, 0, (int)wins->len - 1);
-    } else {
-        index = CLAMP(focused_index - 1, 0, (int)wins->len - 1);
-    }
-
+    int index = CLAMP(self->prev_focused_index + offset, 0, (int)wins->len - 1);
     WindowManagerWindow *win = g_ptr_array_index(wins, index);
-    focus_window(win->id);
+
+    if(!win) {
+        return NULL;
+    }
+
+    return win->id;
 }
 
 /**
@@ -289,9 +278,9 @@ static void setup_widgets(WwtTaskbar *self) {
 
     if(show_navigation_btns) {
         self->navigation_btn_prev =
-            wwt_navigation_btn_new(self->app, self, NAVIGATION_BTN_TYPE_START);
+            wwt_navigation_btn_new(self->app, self, NAVIGATION_BTN_TYPE_PREV);
         self->navigation_btn_next =
-            wwt_navigation_btn_new(self->app, self, NAVIGATION_BTN_TYPE_END);
+            wwt_navigation_btn_new(self->app, self, NAVIGATION_BTN_TYPE_NEXT);
     }
 
     self->tabs = GTK_BOX(gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0));
