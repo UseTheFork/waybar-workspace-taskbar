@@ -11,7 +11,6 @@
 #define TAB_CLASS_NAME_FOCUSED "focused"
 #define TAB_CLASS_NAME_FLOATING "floating"
 #define TAB_CLASS_NAME_URGENT "urgent"
-#define TITLE_MIN_CHARS 3
 
 struct _WwtTab {
     GtkButton parent_instance;
@@ -86,26 +85,26 @@ static void apply_class_names(WwtTab *self) {
 }
 
 /**
- * Trucates the title with an elipsis
+ * Truncates the title with an ellipsis for the label
  *
- * @param title The title to trucate
- * @param max_len The max characters for the string to be including elipsis
+ * @param title The title to truncate
+ * @param len The max characters for the string including ellipsis
  */
-static void truncate_title(gchar *title, int max_len) {
-    if(max_len <= TITLE_MIN_CHARS) {
-        return;
+static char *ellipsis_title(gchar *title, int len) {
+    if(len <= CONFIG_TITLE_MIN_CHARS) {
+        return g_strdup(title);
     }
 
-    glong len = g_utf8_strlen(title, -1);
-    if(len <= max_len) {
-        return;
+    glong str_len = g_utf8_strlen(title, -1);
+    if(str_len <= len) {
+        return g_strdup(title);
     }
 
-    // Find byte offset of max_len-th character to deal with multibyte chars
-    gchar *end = g_utf8_offset_to_pointer(title, max_len - 3);
-    *end = '\0';
+    const gchar *end = g_utf8_offset_to_pointer(title, len - 3);
+    GString *str = g_string_new_len(title, end - title);
+    g_string_append(str, "...");
 
-    strcat(title, "...");
+    return g_string_free(str, FALSE);
 }
 
 /**
@@ -126,14 +125,18 @@ static void set_title_and_icon(WwtTab *self) {
         set_btn_icon(self);
     }
 
-    // tooltip must be set before truncating the title
     if(show_tooltip) {
         gtk_widget_set_tooltip_text(GTK_WIDGET(self), self->title);
     }
 
     if(show_title) {
-        truncate_title(self->title, title_max_chars);
-        gtk_button_set_label(GTK_BUTTON(self), self->title);
+        if(title_max_chars > CONFIG_TITLE_MIN_CHARS) {
+            g_autofree gchar *title =
+                ellipsis_title(self->title, title_max_chars);
+            gtk_button_set_label(GTK_BUTTON(self), title);
+        } else {
+            gtk_button_set_label(GTK_BUTTON(self), self->title);
+        }
     }
 }
 

@@ -305,7 +305,7 @@ static void parse_config_entries(
         if(strcmp("title-max-chars", config_entries[i].key) == 0) {
             int title_max_chars = json_node_get_int(node);
 
-            if(title_max_chars > 3) {
+            if(title_max_chars > CONFIG_TITLE_MIN_CHARS) {
                 self->title_max_chars = title_max_chars;
             }
 
@@ -316,11 +316,11 @@ static void parse_config_entries(
             const char *text_align = json_node_get_string(node);
 
             if(strcmp("left", text_align) == 0) {
-                self->text_align = TAB_TEXT_ALIGN_LEFT;
+                self->text_align = CONFIG_TAB_TEXT_ALIGN_LEFT;
             } else if(strcmp("right", text_align) == 0) {
-                self->text_align = TAB_TEXT_ALIGN_RIGHT;
+                self->text_align = CONFIG_TAB_TEXT_ALIGN_RIGHT;
             } else {
-                self->text_align = TAB_TEXT_ALIGN_CENTER;
+                self->text_align = CONFIG_TAB_TEXT_ALIGN_CENTER;
             }
 
             continue;
@@ -461,7 +461,7 @@ static void wwt_config_init(WwtConfig *self) {
     self->show_tooltip = FALSE;
     self->title_max_chars = -1;
     self->max_tabs = -1;
-    self->text_align = TAB_TEXT_ALIGN_CENTER;
+    self->text_align = CONFIG_TAB_TEXT_ALIGN_CENTER;
     self->icon_size = 16;
     self->show_navigation_btns = NAVIGATION_BTN_DISPLAY_TYPE_NEVER;
     self->navigation_btn_pos = NAVIGATION_BTN_POS_STAGGERED;

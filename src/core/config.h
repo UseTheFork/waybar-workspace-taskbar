@@ -8,9 +8,10 @@ G_BEGIN_DECLS
 typedef enum WindowManagerId WindowManagerId;
 typedef enum NavigationBtnPos NavigationBtnPos;
 
-#define TAB_TEXT_ALIGN_LEFT 0.0
-#define TAB_TEXT_ALIGN_CENTER 0.5
-#define TAB_TEXT_ALIGN_RIGHT 1.0
+#define CONFIG_TAB_TEXT_ALIGN_LEFT 0.0
+#define CONFIG_TAB_TEXT_ALIGN_CENTER 0.5
+#define CONFIG_TAB_TEXT_ALIGN_RIGHT 1.0
+#define CONFIG_TITLE_MIN_CHARS 3
 
 #define WWT_CONFIG_TYPE (wwt_config_get_type())
 
