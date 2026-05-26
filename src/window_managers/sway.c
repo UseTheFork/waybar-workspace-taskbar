@@ -227,20 +227,20 @@ static void walk_tree(
 /**
  * Gets the windows information from the window manager
  *
- * @return (transfer full): Populated window manager data or NULL on error
+ * @return (transfer full): Populated window manager data or NULL on error (free
+ * with window_manager_data_destroy)
  */
 static WindowManagerData *data_fetcher() {
     WindowManagerData *wm_data = window_manager_data_create();
 
-    char *json_str = cmd_run_output("swaymsg -t get_tree");
+    g_autofree char *json_str = cmd_run_output("swaymsg -t get_tree");
     if(!json_str) {
         window_manager_data_destroy(wm_data);
         return NULL;
     }
 
-    JsonParser *parser = create_json_parser(json_str);
+    g_autoptr(JsonParser) parser = create_json_parser(json_str);
     if(!parser) {
-        g_free(json_str);
         window_manager_data_destroy(wm_data);
         return NULL;
     }
@@ -249,8 +249,6 @@ static WindowManagerData *data_fetcher() {
     JsonObject *root_obj = json_node_get_object(root);
     JsonArray *outputs = json_object_get_array_member(root_obj, "nodes");
     if(!outputs) {
-        g_object_unref(parser);
-        g_free(json_str);
         window_manager_data_destroy(wm_data);
         return NULL;
     }
@@ -301,8 +299,6 @@ static WindowManagerData *data_fetcher() {
     }
 
     window_manager_data_sort_windows(wm_data, window_sort);
-    g_object_unref(parser);
-    g_free(json_str);
 
     return wm_data;
 }

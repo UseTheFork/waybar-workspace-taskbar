@@ -110,20 +110,20 @@ static int window_sort(gconstpointer a, gconstpointer b) {
 /**
  * Gets the window and workspace information from the window manager
  *
- * @return (transfer full): Populated window manager data or NULL on error
+ * @return (transfer full): Populated window manager data or NULL on error (free
+ * with window_manager_data_destroy)
  */
 static WindowManagerData *data_fetcher() {
     WindowManagerData *wm_data = window_manager_data_create();
 
-    char *ws_json = cmd_run_output("niri msg -j workspaces");
+    g_autofree char *ws_json = cmd_run_output("niri msg -j workspaces");
     if(!ws_json) {
         window_manager_data_destroy(wm_data);
         return NULL;
     }
 
-    JsonParser *ws_parser = create_json_parser(ws_json);
+    g_autoptr(JsonParser) ws_parser = create_json_parser(ws_json);
     if(!ws_parser) {
-        g_free(ws_json);
         window_manager_data_destroy(wm_data);
         return NULL;
     }
@@ -131,8 +131,6 @@ static WindowManagerData *data_fetcher() {
     JsonNode *ws_root = json_parser_get_root(ws_parser);
     JsonArray *workspaces = json_node_get_array(ws_root);
     if(!workspaces) {
-        g_object_unref(ws_parser);
-        g_free(ws_json);
         window_manager_data_destroy(wm_data);
         return NULL;
     }
@@ -158,19 +156,14 @@ static WindowManagerData *data_fetcher() {
         );
     }
 
-    char *win_json = cmd_run_output("niri msg -j windows");
+    g_autofree char *win_json = cmd_run_output("niri msg -j windows");
     if(!win_json) {
-        g_object_unref(ws_parser);
-        g_free(ws_json);
         window_manager_data_destroy(wm_data);
         return NULL;
     }
 
-    JsonParser *win_parser = create_json_parser(win_json);
+    g_autoptr(JsonParser) win_parser = create_json_parser(win_json);
     if(!win_parser) {
-        g_object_unref(ws_parser);
-        g_free(ws_json);
-        g_free(win_json);
         window_manager_data_destroy(wm_data);
         return NULL;
     }
@@ -178,10 +171,6 @@ static WindowManagerData *data_fetcher() {
     JsonNode *win_root = json_parser_get_root(win_parser);
     JsonArray *windows = json_node_get_array(win_root);
     if(!windows) {
-        g_object_unref(win_parser);
-        g_object_unref(ws_parser);
-        g_free(win_json);
-        g_free(ws_json);
         window_manager_data_destroy(wm_data);
         return NULL;
     }
@@ -236,10 +225,6 @@ static WindowManagerData *data_fetcher() {
     }
 
     window_manager_data_sort_windows(wm_data, window_sort);
-    g_object_unref(win_parser);
-    g_object_unref(ws_parser);
-    g_free(win_json);
-    g_free(ws_json);
 
     return wm_data;
 }

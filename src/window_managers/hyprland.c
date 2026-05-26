@@ -114,12 +114,13 @@ static int window_sort(gconstpointer a, gconstpointer b) {
 /**
  * Gets the windows information from the window manager
  *
- * @return (transfer full): Populated window manager data or NULL on error
+ * @return (transfer full): Populated window manager data or NULL on error (free
+ * with window_manager_data_destroy)
  */
 static WindowManagerData *data_fetcher() {
     WindowManagerData *wm_data = window_manager_data_create();
 
-    char *batch_json =
+    g_autofree char *batch_json =
         cmd_run_output("hyprctl --batch \"monitors; clients\" -j");
 
     if(!batch_json) {
@@ -129,7 +130,6 @@ static WindowManagerData *data_fetcher() {
 
     char *split = strstr(batch_json, "\n\n");
     if(!split) {
-        g_free(batch_json);
         window_manager_data_destroy(wm_data);
         return NULL;
     }
@@ -138,9 +138,8 @@ static WindowManagerData *data_fetcher() {
     char *monitors_json = batch_json;
     char *clients_json = split + 2;
 
-    JsonParser *monitors_parser = create_json_parser(monitors_json);
+    g_autoptr(JsonParser) monitors_parser = create_json_parser(monitors_json);
     if(!monitors_parser) {
-        g_free(batch_json);
         window_manager_data_destroy(wm_data);
         return NULL;
     }
@@ -160,11 +159,8 @@ static WindowManagerData *data_fetcher() {
         window_manager_data_workspace_create(wm_data, ws_id, focused, name);
     }
 
-    g_object_unref(monitors_parser);
-
-    JsonParser *clients_parser = create_json_parser(clients_json);
+    g_autoptr(JsonParser) clients_parser = create_json_parser(clients_json);
     if(!clients_parser) {
-        g_free(batch_json);
         window_manager_data_destroy(wm_data);
         return NULL;
     }
@@ -211,8 +207,6 @@ static WindowManagerData *data_fetcher() {
     }
 
     window_manager_data_sort_windows(wm_data, window_sort);
-    g_object_unref(clients_parser);
-    g_free(batch_json);
 
     return wm_data;
 }
