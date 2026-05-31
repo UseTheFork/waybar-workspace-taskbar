@@ -2,10 +2,9 @@
 #include "core/app.h"
 #include "core/config.h"
 #include "core/services.h"
-#include "core/window_manager_data.h"
 #include "navigation_btn.h"
-#include "services/window_manager_events.h"
-#include "services/window_manager_spec.h"
+#include "services/window_manager/data.h"
+#include "services/window_manager/subscriptions.h"
 #include "tab.h"
 
 struct _WwtTaskbar {
@@ -15,9 +14,8 @@ struct _WwtTaskbar {
     WwtNavigationBtn *navigation_btn_prev;
     WwtNavigationBtn *navigation_btn_next;
     GtkBox *tabs;
-    WindowManagerData *wm_data;
     int events_subscription_id;
-    int prev_focused_index;
+    int focused_idx;
 };
 
 G_DEFINE_TYPE(WwtTaskbar, wwt_taskbar, GTK_TYPE_BOX);
@@ -28,6 +26,15 @@ G_DEFINE_TYPE(WwtTaskbar, wwt_taskbar, GTK_TYPE_BOX);
 #define TASKBAR_CLASS_NAME_SINGLE "single"
 #define TASKBAR_CLASS_NAME_OVERFLOW_START "overflow-start"
 #define TASKBAR_CLASS_NAME_OVERFLOW_END "overflow-end"
+
+/**
+ * Gets the focused idx value
+ *
+ * @param self
+ */
+int wwt_taskbar_get_focused_idx(WwtTaskbar *self) {
+    return self->focused_idx;
+}
 
 /**
  * Handles the visual state after tab generation.
@@ -86,107 +93,32 @@ static void apply_visual_styles(
 }
 
 /**
- * Get the index of the focused window
- *
- * @param wins The array of windows
- * @return The focused windows index
- */
-static int get_focused_index(WwtTaskbar *self, GPtrArray *wins) {
-    if(wins->len == 0) {
-        self->prev_focused_index = 0;
-        return 0;
-    }
-
-    for(guint i = 0; i < wins->len; i++) {
-        WindowManagerWindow *win = g_ptr_array_index(wins, i);
-
-        if(win->focused) {
-            self->prev_focused_index = i;
-            return i;
-        }
-    }
-
-    self->prev_focused_index =
-        CLAMP(self->prev_focused_index, 0, (int)wins->len - 1);
-
-    return self->prev_focused_index;
-}
-
-/**
- * Gets the windows to be displayed in tabs
- *
- * @param self
- * @return A GPtrArray of tabs to be displayed
- */
-static GPtrArray *get_display_windows(WwtTaskbar *self) {
-    WwtConfig *config = wwt_app_get_config(self->app);
-    const gchar *output = wwt_config_get_output(config);
-
-    if(output) {
-        return window_manager_data_get_windows_on_output(self->wm_data, output);
-    }
-
-    return window_manager_data_get_windows_on_focused(self->wm_data);
-}
-
-/**
- * Gets the focused window id
- *
- * @param self
- * @param offset The offset from the focused window eg. 1 = next, -1 = prev, 0 =
- * current focused.
- * @returns (transfer none): The window id
- */
-gchar *wwt_taskbar_get_focus_win_id(WwtTaskbar *self, int offset) {
-    GPtrArray *wins = get_display_windows(self);
-
-    if(!wins || wins->len == 0) {
-        return NULL;
-    }
-
-    int index = CLAMP(self->prev_focused_index + offset, 0, (int)wins->len - 1);
-    WindowManagerWindow *win = g_ptr_array_index(wins, index);
-
-    if(!win) {
-        return NULL;
-    }
-
-    return win->id;
-}
-
-/**
  * Gets data from the window manager and renders the tabs
  *
  * @param self
  */
-void wwt_taskbar_update_tabs(WwtTaskbar *self) {
-    WwtServices *services = wwt_app_get_services(self->app);
+static void wwt_taskbar_update_tabs(
+    WwtTaskbar *self,
+    WwtWindowManagerData *wm_data
+) {
     WwtConfig *config = wwt_app_get_config(self->app);
-    WindowManagerSpec *spec = wwt_services_get_window_manager_spec(services);
-
-    WindowManagerDataFetcher fetch_data =
-        window_manager_spec_get_data_fetcher(spec);
-
-    window_manager_data_destroy(self->wm_data);
-    self->wm_data = fetch_data();
-
-    if(!self->wm_data) {
-        return;
-    }
+    const char *output = wwt_config_get_output(config);
 
     int max_tabs = wwt_config_get_max_tabs(config);
-    GPtrArray *wins = get_display_windows(self);
+    GPtrArray *wins = wwt_window_manager_data_get_windows(wm_data, output);
 
     if(!wins) {
         return;
     }
 
-    int focused_index = get_focused_index(self, wins);
+    int focused_idx = wwt_window_manager_data_get_focused_idx(wm_data, output);
+    self->focused_idx = focused_idx > -1 ? focused_idx : self->focused_idx;
+
     int start = 0;
     int end = wins->len;
 
     if(max_tabs > 0 && (int)wins->len > max_tabs) {
-        start = focused_index - max_tabs / 2;
+        start = self->focused_idx - max_tabs / 2;
         end = start + max_tabs;
 
         if(start < 0) {
@@ -205,7 +137,7 @@ void wwt_taskbar_update_tabs(WwtTaskbar *self) {
     GList *child = children;
 
     for(guint i = start; i < end; i++) {
-        WindowManagerWindow *win = g_ptr_array_index(wins, i);
+        WindowManagerDataWindow *win = g_ptr_array_index(wins, i);
 
         if(child == NULL) {
             WwtTab *tab = wwt_tab_new(
@@ -257,12 +189,14 @@ void wwt_taskbar_update_tabs(WwtTaskbar *self) {
 /**
  * Event listener for the window manager
  *
- * @param event The window manager event
+ * @param data The notify data (Window Manager Data)
  * @param user_data The data passed in (self)
  */
-static void event_listener(WindowManagerEvent *event, gpointer user_data) {
+static void event_listener(gpointer data, gpointer user_data) {
+    WwtWindowManagerData *wm_data = data;
     WwtTaskbar *self = user_data;
-    wwt_taskbar_update_tabs(self);
+
+    wwt_taskbar_update_tabs(self, wm_data);
 }
 
 /**
@@ -351,18 +285,18 @@ static void wwt_taskbar_init(WwtTaskbar *self) {
  */
 static void dispose(GObject *obj) {
     WwtTaskbar *self = WWT_TASKBAR(obj);
-    WwtServices *services = wwt_app_get_services(self->app);
 
-    if(services) {
-        WindowManagerEvents *events =
-            wwt_services_get_window_manager_events(services);
-        window_manager_events_unsubscribe(events, self->events_subscription_id);
+    if(self->events_subscription_id >= 0) {
+        WwtServices *services = wwt_app_get_services(self->app);
+        WwtWindowManager *wm = wwt_services_get_window_manager(services);
+        WwtWindowManagerSubscriptions *subscriptions =
+            wwt_window_manager_get_subsciptions(wm);
+
+        wwt_window_manager_subscriptions_unsubscribe(
+            subscriptions,
+            self->events_subscription_id
+        );
         self->events_subscription_id = -1;
-    }
-
-    if(self->wm_data) {
-        window_manager_data_destroy(self->wm_data);
-        self->wm_data = NULL;
     }
 
     G_OBJECT_CLASS(wwt_taskbar_parent_class)->dispose(obj);
@@ -405,7 +339,7 @@ WwtTaskbar *wwt_taskbar_new(WwtApp *app) {
     );
 
     self->app = app;
-    self->prev_focused_index = 0;
+    self->focused_idx = 0;
     setup_widgets(self);
 
     WwtServices *services = wwt_app_get_services(app);
@@ -414,13 +348,19 @@ WwtTaskbar *wwt_taskbar_new(WwtApp *app) {
         return NULL;
     }
 
-    WindowManagerEvents *wm_events =
-        wwt_services_get_window_manager_events(services);
+    WwtWindowManager *wm = wwt_services_get_window_manager(services);
 
-    self->events_subscription_id =
-        window_manager_events_subscribe(wm_events, event_listener, self);
+    WwtWindowManagerSubscriptions *subscriptions =
+        wwt_window_manager_get_subsciptions(wm);
+    self->events_subscription_id = wwt_window_manager_subscriptions_subscribe(
+        subscriptions,
+        event_listener,
+        self
+    );
 
-    wwt_taskbar_update_tabs(self);
+    WwtWindowManagerData *wm_data = wwt_window_manager_get_data(wm);
+
+    wwt_taskbar_update_tabs(self, wm_data);
 
     return self;
 }

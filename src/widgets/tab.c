@@ -38,14 +38,15 @@ G_DEFINE_TYPE(WwtTab, wwt_tab, GTK_TYPE_BUTTON);
 static gboolean set_btn_icon(WwtTab *self) {
     WwtServices *services = wwt_app_get_services(self->app);
     WwtConfig *config = wwt_app_get_config(self->app);
-    AppIcons *app_icons = wwt_services_get_app_icons(services);
+    WwtAppIcons *app_icons = wwt_services_get_app_icons(services);
 
     if(!services || !config || !app_icons) {
         return FALSE;
     }
 
     int icon_size = wwt_config_get_icon_size(config);
-    GdkPixbuf *pixbuf = app_icons_get_icon(app_icons, self->app_id, icon_size);
+    GdkPixbuf *pixbuf =
+        wwt_app_icons_get_icon(app_icons, self->app_id, icon_size);
     GtkWidget *image = gtk_image_new_from_pixbuf(pixbuf);
 
     gtk_button_set_image(GTK_BUTTON(self), image);

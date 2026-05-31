@@ -2,7 +2,7 @@
 #include "core/app.h"
 #include "glib.h"
 #include "json-glib/json-glib.h"
-#include "services/window_manager_spec.h"
+#include "services/window_manager/window_manager.h"
 #include "utils/common.h"
 #include "widgets/navigation_btn.h"
 #include <stdlib.h>

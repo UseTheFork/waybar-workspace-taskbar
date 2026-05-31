@@ -1,9 +1,14 @@
 #include "app_icons.h"
+#include "glib-object.h"
 #include <gio/gdesktopappinfo.h>
 
-struct _AppIcons {
+struct _WwtAppIcons {
+    GObject parent_instance;
+
     GHashTable *cache;
 };
+
+G_DEFINE_TYPE(WwtAppIcons, wwt_app_icons, G_TYPE_OBJECT);
 
 /**
  * Sets the icon to the cache
@@ -14,7 +19,7 @@ struct _AppIcons {
  * @return TRUE if set else FALSE
  */
 static gboolean cache_set_icon(
-    AppIcons *self,
+    WwtAppIcons *self,
     const gchar *key,
     GdkPixbuf *icon
 ) {
@@ -28,7 +33,7 @@ static gboolean cache_set_icon(
  * @param key The app_id
  * @return the cached icon
  */
-static GdkPixbuf *cache_get_icon(AppIcons *self, const gchar *key) {
+static GdkPixbuf *cache_get_icon(WwtAppIcons *self, const gchar *key) {
     return g_hash_table_lookup(self->cache, key);
 }
 
@@ -113,8 +118,8 @@ static GdkPixbuf *create_icon_pixbuf(GIcon *icon, int icon_size) {
  * @param icon_size The icon size
  * @return The icon
  */
-GdkPixbuf *app_icons_get_icon(
-    AppIcons *self,
+GdkPixbuf *wwt_app_icons_get_icon(
+    WwtAppIcons *self,
     const char *app_id,
     int icon_size
 ) {
@@ -142,28 +147,47 @@ GdkPixbuf *app_icons_get_icon(
 }
 
 /**
- * Destroys the app icons service
+ * Dispose the instance.
  *
- * @param self
+ * @param obj The stuct obj
  */
-void app_icons_destroy(AppIcons *self) {
+static void dispose(GObject *obj) {
+    WwtAppIcons *self = WWT_APP_ICONS(obj);
+
     if(self->cache) {
         g_hash_table_destroy(self->cache);
         self->cache = NULL;
     }
 
-    g_free(self);
+    G_OBJECT_CLASS(wwt_app_icons_parent_class)->dispose(obj);
+}
+
+/**
+ * Initialize the instance
+ *
+ * @param self
+ */
+static void wwt_app_icons_init(WwtAppIcons *self) {
+    self->cache =
+        g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
+}
+
+/**
+ * Class initializer
+ *
+ * @param klass the object class
+ */
+static void wwt_app_icons_class_init(WwtAppIconsClass *klass) {
+    G_OBJECT_CLASS(klass)->dispose = dispose;
 }
 
 /**
  * Creates the app icons service
  *
- * @return The fully created AppIcons instance (transfer: full)
+ * @return (transfer full) The WwtAppIcons instance
  */
-AppIcons *app_icons_create() {
-    AppIcons *self = g_malloc(sizeof(AppIcons));
-    self->cache =
-        g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
+WwtAppIcons *wwt_app_icons_new() {
+    WwtAppIcons *self = g_object_new(WWT_APP_ICONS_TYPE, NULL);
 
     return self;
 }

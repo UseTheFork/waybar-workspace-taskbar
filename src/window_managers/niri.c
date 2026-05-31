@@ -1,8 +1,7 @@
 #include "niri.h"
-#include "core/window_manager_data.h"
 #include "glib.h"
-#include "services/window_manager_events.h"
-#include "services/window_manager_spec.h"
+#include "services/window_manager/data.h"
+#include "services/window_manager/events.h"
 #include "utils/cmd.h"
 #include "utils/common.h"
 #include <stdio.h>
@@ -63,7 +62,7 @@ static gboolean events_reader(FILE *socket_file, WindowManagerEvent *event) {
  * @return TRUE if should fire events else FALSE
  */
 static gboolean events_validator(WindowManagerEvent *event) {
-    JsonParser *parser = create_json_parser(event->msg);
+    g_autoptr(JsonParser) parser = create_json_parser(event->msg);
     JsonNode *root = json_parser_get_root(parser);
     JsonObject *root_obj = json_node_get_object(root);
 
@@ -76,11 +75,9 @@ static gboolean events_validator(WindowManagerEvent *event) {
         json_object_has_member(root_obj, "WorkspaceActiveWindowChanged") ||
         json_object_has_member(root_obj, "WindowUrgencyChanged") ||
         json_object_has_member(root_obj, "OverviewOpenedOrClosed")) {
-        g_object_unref(parser);
         return TRUE;
     }
 
-    g_object_unref(parser);
     return FALSE;
 }
 
@@ -93,8 +90,8 @@ static gboolean events_validator(WindowManagerEvent *event) {
  * @return < 0 if should swap
  */
 static int window_sort(gconstpointer a, gconstpointer b) {
-    const WindowManagerWindow *cur = *(const WindowManagerWindow **)a;
-    const WindowManagerWindow *next = *(const WindowManagerWindow **)b;
+    const WindowManagerDataWindow *cur = *(const WindowManagerDataWindow **)a;
+    const WindowManagerDataWindow *next = *(const WindowManagerDataWindow **)b;
 
     if(cur->floating != next->floating) {
         return cur->floating - next->floating;
@@ -108,31 +105,26 @@ static int window_sort(gconstpointer a, gconstpointer b) {
 }
 
 /**
- * Gets the window and workspace information from the window manager
+ * Gets the windows information from the window manager and populates the window
+ * manager data
  *
- * @return (transfer full): Populated window manager data or NULL on error (free
- * with window_manager_data_destroy)
+ * @param wm_data The window manager data to populate
  */
-static WindowManagerData *data_fetcher() {
-    WindowManagerData *wm_data = window_manager_data_create();
-
+static void data_fetcher(WwtWindowManagerData *wm_data) {
     g_autofree char *ws_json = cmd_run_output("niri msg -j workspaces");
     if(!ws_json) {
-        window_manager_data_destroy(wm_data);
-        return NULL;
+        return;
     }
 
     g_autoptr(JsonParser) ws_parser = create_json_parser(ws_json);
     if(!ws_parser) {
-        window_manager_data_destroy(wm_data);
-        return NULL;
+        return;
     }
 
     JsonNode *ws_root = json_parser_get_root(ws_parser);
     JsonArray *workspaces = json_node_get_array(ws_root);
     if(!workspaces) {
-        window_manager_data_destroy(wm_data);
-        return NULL;
+        return;
     }
 
     guint ws_len = json_array_get_length(workspaces);
@@ -148,7 +140,7 @@ static WindowManagerData *data_fetcher() {
         gboolean is_focused = json_object_get_boolean_member(ws, "is_focused");
         int ws_id = json_object_get_int_member(ws, "id");
 
-        window_manager_data_workspace_create(
+        wwt_window_manager_data_workspace_add(
             wm_data,
             ws_id,
             is_focused,
@@ -158,21 +150,18 @@ static WindowManagerData *data_fetcher() {
 
     g_autofree char *win_json = cmd_run_output("niri msg -j windows");
     if(!win_json) {
-        window_manager_data_destroy(wm_data);
-        return NULL;
+        return;
     }
 
     g_autoptr(JsonParser) win_parser = create_json_parser(win_json);
     if(!win_parser) {
-        window_manager_data_destroy(wm_data);
-        return NULL;
+        return;
     }
 
     JsonNode *win_root = json_parser_get_root(win_parser);
     JsonArray *windows = json_node_get_array(win_root);
     if(!windows) {
-        window_manager_data_destroy(wm_data);
-        return NULL;
+        return;
     }
 
     guint win_len = json_array_get_length(windows);
@@ -209,7 +198,7 @@ static WindowManagerData *data_fetcher() {
             }
         }
 
-        window_manager_data_window_create(
+        wwt_window_manager_data_window_add(
             wm_data,
             id_str,
             title,
@@ -224,9 +213,7 @@ static WindowManagerData *data_fetcher() {
         );
     }
 
-    window_manager_data_sort_windows(wm_data, window_sort);
-
-    return wm_data;
+    wwt_window_manager_data_sort_windows(wm_data, window_sort);
 }
 
 /**
@@ -234,15 +221,12 @@ static WindowManagerData *data_fetcher() {
  *
  * @return (transfer full): The fully created window manager spec
  */
-WindowManagerSpec *window_manager_spec_create_niri() {
-    WindowManagerSpec *spec = g_malloc(sizeof(WindowManagerSpec));
-
-    spec->id = WM_ID_NIRI;
-    spec->events_constructor = events_constructor;
-    spec->events_destructor = events_destructor;
-    spec->events_reader = events_reader;
-    spec->events_validator = events_validator;
-    spec->data_fetcher = data_fetcher;
-
-    return spec;
+WindowManagerSpecFactory window_manager_spec_factory_niri() {
+    return (WindowManagerSpecFactory){
+        .events_constructor = events_constructor,
+        .events_destructor = events_destructor,
+        .events_reader = events_reader,
+        .events_validator = events_validator,
+        .data_fetcher = data_fetcher,
+    };
 }

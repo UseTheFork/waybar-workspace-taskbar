@@ -4,10 +4,17 @@
 
 G_BEGIN_DECLS
 
-typedef struct _AppIcons AppIcons;
+typedef struct _WwtAppIcons WwtAppIcons;
 
-AppIcons *app_icons_create();
-void app_icons_destroy(AppIcons *self);
-GdkPixbuf *app_icons_get_icon(AppIcons *self, const char *app_id, int size);
+#define WWT_APP_ICONS_TYPE (wwt_app_icons_get_type())
+
+G_DECLARE_FINAL_TYPE(WwtAppIcons, wwt_app_icons, WWT, APP_ICONS, GObject);
+
+WwtAppIcons *wwt_app_icons_new();
+GdkPixbuf *wwt_app_icons_get_icon(
+    WwtAppIcons *self,
+    const char *app_id,
+    int size
+);
 
 G_END_DECLS

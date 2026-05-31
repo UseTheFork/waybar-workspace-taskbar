@@ -1,8 +1,7 @@
 #include "hyprland.h"
-#include "core/window_manager_data.h"
 #include "glib.h"
-#include "services/window_manager_events.h"
-#include "services/window_manager_spec.h"
+#include "services/window_manager/data.h"
+#include "services/window_manager/events.h"
 #include "utils/cmd.h"
 #include "utils/common.h"
 #include <stdio.h>
@@ -92,8 +91,8 @@ static gboolean events_validator(WindowManagerEvent *event) {
  * @return < 0 if should swap
  */
 static int window_sort(gconstpointer a, gconstpointer b) {
-    const WindowManagerWindow *cur = *(const WindowManagerWindow **)a;
-    const WindowManagerWindow *next = *(const WindowManagerWindow **)b;
+    const WindowManagerDataWindow *cur = *(const WindowManagerDataWindow **)a;
+    const WindowManagerDataWindow *next = *(const WindowManagerDataWindow **)b;
 
     if(cur->floating != next->floating) {
         return cur->floating - next->floating;
@@ -112,26 +111,22 @@ static int window_sort(gconstpointer a, gconstpointer b) {
 }
 
 /**
- * Gets the windows information from the window manager
+ * Gets the windows information from the window manager and populates the window
+ * manager data
  *
- * @return (transfer full): Populated window manager data or NULL on error (free
- * with window_manager_data_destroy)
+ * @param wm_data The window manager data to populate
  */
-static WindowManagerData *data_fetcher() {
-    WindowManagerData *wm_data = window_manager_data_create();
-
+static void data_fetcher(WwtWindowManagerData *wm_data) {
     g_autofree char *batch_json =
         cmd_run_output("hyprctl --batch \"monitors; clients\" -j");
 
     if(!batch_json) {
-        window_manager_data_destroy(wm_data);
-        return NULL;
+        return;
     }
 
     char *split = strstr(batch_json, "\n\n");
     if(!split) {
-        window_manager_data_destroy(wm_data);
-        return NULL;
+        return;
     }
     *split = '\0';
 
@@ -140,8 +135,7 @@ static WindowManagerData *data_fetcher() {
 
     g_autoptr(JsonParser) monitors_parser = create_json_parser(monitors_json);
     if(!monitors_parser) {
-        window_manager_data_destroy(wm_data);
-        return NULL;
+        return;
     }
 
     JsonNode *monitors_root = json_parser_get_root(monitors_parser);
@@ -156,13 +150,12 @@ static WindowManagerData *data_fetcher() {
             json_object_get_object_member(monitor, "activeWorkspace");
         gint ws_id = json_object_get_int_member(active_ws, "id");
 
-        window_manager_data_workspace_create(wm_data, ws_id, focused, name);
+        wwt_window_manager_data_workspace_add(wm_data, ws_id, focused, name);
     }
 
     g_autoptr(JsonParser) clients_parser = create_json_parser(clients_json);
     if(!clients_parser) {
-        window_manager_data_destroy(wm_data);
-        return NULL;
+        return;
     }
 
     JsonNode *clients_root = json_parser_get_root(clients_parser);
@@ -191,7 +184,7 @@ static WindowManagerData *data_fetcher() {
         gint64 x = json_array_get_int_element(at, 0);
         gint64 y = json_array_get_int_element(at, 1);
 
-        window_manager_data_window_create(
+        wwt_window_manager_data_window_add(
             wm_data,
             address,
             title,
@@ -206,25 +199,20 @@ static WindowManagerData *data_fetcher() {
         );
     }
 
-    window_manager_data_sort_windows(wm_data, window_sort);
-
-    return wm_data;
+    wwt_window_manager_data_sort_windows(wm_data, window_sort);
 }
 
 /**
- * Create the window manager spec
+ * Creates the window manager spec
  *
- * @return (transfer full): The fully created window manager spec
+ * @return The spec factory
  */
-WindowManagerSpec *window_manager_spec_create_hyprland() {
-    WindowManagerSpec *spec = g_malloc(sizeof(WindowManagerSpec));
-
-    spec->id = WM_ID_HYPRLAND;
-    spec->events_constructor = events_constructor;
-    spec->events_destructor = events_destructor;
-    spec->events_reader = events_reader;
-    spec->events_validator = events_validator;
-    spec->data_fetcher = data_fetcher;
-
-    return spec;
+WindowManagerSpecFactory window_manager_spec_factory_hyprland() {
+    return (WindowManagerSpecFactory){
+        .events_constructor = events_constructor,
+        .events_destructor = events_destructor,
+        .events_reader = events_reader,
+        .events_validator = events_validator,
+        .data_fetcher = data_fetcher,
+    };
 }

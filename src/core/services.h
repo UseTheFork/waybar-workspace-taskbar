@@ -1,21 +1,20 @@
 #pragma once
 
+#include "core/config.h"
 #include <gtk/gtk.h>
 
 G_BEGIN_DECLS
 
-typedef struct WindowManagerSpec WindowManagerSpec;
-typedef struct _WindowManagerEvents WindowManagerEvents;
-typedef struct _AppIcons AppIcons;
-typedef struct _WwtConfig WwtConfig;
+typedef struct _WwtWindowManager WwtWindowManager;
+typedef struct _WwtAppIcons WwtAppIcons;
 
 #define WWT_SERVICES_TYPE (wwt_services_get_type())
 
 G_DECLARE_FINAL_TYPE(WwtServices, wwt_services, WWT, SERVICES, GObject)
 
-WwtServices *wwt_services_default(WwtConfig *config);
-WindowManagerEvents *wwt_services_get_window_manager_events(WwtServices *self);
-WindowManagerSpec *wwt_services_get_window_manager_spec(WwtServices *self);
-AppIcons *wwt_services_get_app_icons(WwtServices *self);
+WwtServices *wwt_services_init_default(WindowManagerId wm_id);
+WwtServices *wwt_services_get_default();
+WwtAppIcons *wwt_services_get_app_icons(WwtServices *self);
+WwtWindowManager *wwt_services_get_window_manager(WwtServices *self);
 
 G_END_DECLS

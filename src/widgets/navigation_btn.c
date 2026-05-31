@@ -1,6 +1,8 @@
 #include "navigation_btn.h"
 #include "core/app.h"
 #include "core/config.h"
+#include "core/services.h"
+#include "services/window_manager/data.h"
 #include "utils/cmd.h"
 #include "utils/common.h"
 
@@ -25,24 +27,44 @@ G_DEFINE_TYPE(WwtNavigationBtn, wwt_navigation_btn, GTK_TYPE_BUTTON);
 static void handle_click(gpointer user_data) {
     WwtNavigationBtn *self = user_data;
     WwtConfig *config = wwt_app_get_config(self->app);
+    const char *output = wwt_config_get_output(config);
     const char *navigation_btn_on_click =
         wwt_config_get_navigation_btn_on_click(config);
 
-    if(self->type == NAVIGATION_BTN_TYPE_PREV) {
-        gchar *win_id = wwt_taskbar_get_focus_win_id(self->taskbar, -1);
+    if(!navigation_btn_on_click) {
+        return;
+    }
 
-        if(win_id) {
+    WwtServices *services = wwt_services_get_default();
+    WwtWindowManager *wm = wwt_services_get_window_manager(services);
+    WwtWindowManagerData *wm_data = wwt_window_manager_get_data(wm);
+
+    int focused_idx = wwt_taskbar_get_focused_idx(self->taskbar);
+
+    if(self->type == NAVIGATION_BTN_TYPE_PREV) {
+        WindowManagerDataWindow *win =
+            wwt_window_manager_data_get_window_at_idx(
+                wm_data,
+                output,
+                focused_idx - 1
+            );
+
+        if(win) {
             g_autofree gchar *cmd =
-                str_replace(navigation_btn_on_click, "{id}", win_id);
+                str_replace(navigation_btn_on_click, "{id}", win->id);
             cmd_run_fork_exec(cmd);
         }
-
     } else {
-        gchar *win_id = wwt_taskbar_get_focus_win_id(self->taskbar, 1);
+        WindowManagerDataWindow *win =
+            wwt_window_manager_data_get_window_at_idx(
+                wm_data,
+                output,
+                focused_idx + 1
+            );
 
-        if(win_id) {
+        if(win) {
             g_autofree gchar *cmd =
-                str_replace(navigation_btn_on_click, "{id}", win_id);
+                str_replace(navigation_btn_on_click, "{id}", win->id);
             cmd_run_fork_exec(cmd);
         }
     }
@@ -135,8 +157,8 @@ WwtNavigationBtn *wwt_navigation_btn_new(
         wwt_config_get_navigation_btn_next_label(config);
 
     const char *label = type == NAVIGATION_BTN_TYPE_PREV
-                            ? navigation_btn_prev_label
-                            : navigation_btn_next_label;
+        ? navigation_btn_prev_label
+        : navigation_btn_next_label;
 
     WwtNavigationBtn *self =
         g_object_new(WWT_NAVIGATION_BUTTON_TYPE, "label", label, NULL);
