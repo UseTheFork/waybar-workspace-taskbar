@@ -5,9 +5,15 @@
 
 G_BEGIN_DECLS
 
-int socket_connect(const char *socket_path);
+typedef enum {
+    TIMESTAMP_S,
+    TIMESTAMP_MS,
+    TIMESTAMP_US,
+    TIMESTAMP_NS
+} TimestampUnit;
+
 JsonParser *create_json_parser(const char *json_str);
-long long get_timestamp();
+long long get_timestamp(TimestampUnit type);
 gchar *str_replace(const char *str, const char *find, const char *replace);
 
 G_END_DECLS

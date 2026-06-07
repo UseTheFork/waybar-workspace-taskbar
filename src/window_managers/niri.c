@@ -1,10 +1,43 @@
 #include "niri.h"
-#include "glib.h"
 #include "services/window_manager/data.h"
 #include "services/window_manager/events.h"
-#include "utils/cmd.h"
 #include "utils/common.h"
+#include "utils/socket.h"
 #include <stdio.h>
+#include <sys/socket.h>
+
+/**
+ * Gets the niri socket path
+ *
+ * @return The socket path or NULL if not found
+ */
+static const char *get_socket_path() {
+    return getenv("NIRI_SOCKET");
+}
+
+/**
+ * Fetches data from the ipc
+ *
+ * @param cmd The command to send to the ipc
+ * @return (transfer full): The ipc response
+ */
+static char *ipc_fetch(const char *cmd) {
+    const char *socket_path = get_socket_path();
+
+    if(!socket_path) {
+        return NULL;
+    }
+
+    int fd = socket_connect(socket_path);
+    write(fd, cmd, strlen(cmd));
+    write(fd, "\n", 1);
+    shutdown(fd, SHUT_WR);
+
+    char *data = socket_read(fd, SOCKET_READ_MAX);
+    close(fd);
+
+    return data;
+}
 
 /**
  * Connect and initialize the socket connection
@@ -12,7 +45,7 @@
  * @return The file descriptor
  */
 static int events_constructor() {
-    const char *socket_path = getenv("NIRI_SOCKET");
+    const char *socket_path = get_socket_path();
 
     if(!socket_path) {
         return -1;
@@ -111,7 +144,7 @@ static int window_sort(gconstpointer a, gconstpointer b) {
  * @param wm_data The window manager data to populate
  */
 static void data_fetcher(WwtWindowManagerData *wm_data) {
-    g_autofree char *ws_json = cmd_run_output("niri msg -j workspaces");
+    g_autofree char *ws_json = ipc_fetch("{\"Workspaces\": null}");
     if(!ws_json) {
         return;
     }
@@ -122,7 +155,13 @@ static void data_fetcher(WwtWindowManagerData *wm_data) {
     }
 
     JsonNode *ws_root = json_parser_get_root(ws_parser);
-    JsonArray *workspaces = json_node_get_array(ws_root);
+    JsonObject *ws_root_obj = json_node_get_object(ws_root);
+    JsonObject *ws_ok = json_object_get_object_member(ws_root_obj, "Ok");
+    if(!ws_ok) {
+        return;
+    }
+
+    JsonArray *workspaces = json_object_get_array_member(ws_ok, "Workspaces");
     if(!workspaces) {
         return;
     }
@@ -148,7 +187,7 @@ static void data_fetcher(WwtWindowManagerData *wm_data) {
         );
     }
 
-    g_autofree char *win_json = cmd_run_output("niri msg -j windows");
+    g_autofree char *win_json = ipc_fetch("{\"Windows\": null}");
     if(!win_json) {
         return;
     }
@@ -159,7 +198,13 @@ static void data_fetcher(WwtWindowManagerData *wm_data) {
     }
 
     JsonNode *win_root = json_parser_get_root(win_parser);
-    JsonArray *windows = json_node_get_array(win_root);
+    JsonObject *win_obj = json_node_get_object(win_root);
+    JsonObject *win_ok = json_object_get_object_member(win_obj, "Ok");
+    if(!win_ok) {
+        return;
+    }
+
+    JsonArray *windows = json_object_get_array_member(win_ok, "Windows");
     if(!windows) {
         return;
     }

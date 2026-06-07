@@ -13,6 +13,7 @@ src_files = files(
   'src/core/services.c',
   'src/utils/cmd.c',
   'src/utils/common.c',
+  'src/utils/socket.c',
   'src/services/app_icons.c',
   'src/services/window_manager/data.c',
   'src/services/window_manager/events.c',

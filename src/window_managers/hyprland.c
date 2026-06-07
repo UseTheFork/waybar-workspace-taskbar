@@ -1,10 +1,74 @@
 #include "hyprland.h"
-#include "glib.h"
 #include "services/window_manager/data.h"
 #include "services/window_manager/events.h"
-#include "utils/cmd.h"
 #include "utils/common.h"
+#include "utils/socket.h"
 #include <stdio.h>
+#include <sys/socket.h>
+
+typedef enum {
+    HYPRLAND_SOCKET_TYPE_IPC,
+    HYPRLAND_SOCKET_TYPE_EVENTS
+} HyprlandSocketType;
+
+/**
+ * Creates the socket path
+ *
+ * @param path The path to populate
+ * @param path_size The size of the path string
+ * @param socket_type The type of socket either events or ipc
+ */
+static gboolean get_socket_path(
+    char *path,
+    size_t path_size,
+    HyprlandSocketType socket_type
+) {
+    const char *his = getenv("HYPRLAND_INSTANCE_SIGNATURE");
+    const char *xdg_runtime = getenv("XDG_RUNTIME_DIR");
+
+    if(!his || !xdg_runtime) {
+        fprintf(stderr, "Missing hyprland socket environment variables.\n");
+        return FALSE;
+    }
+
+    if(socket_type == HYPRLAND_SOCKET_TYPE_EVENTS) {
+        snprintf(path, path_size, "%s/hypr/%s/.socket2.sock", xdg_runtime, his);
+    } else {
+        snprintf(path, path_size, "%s/hypr/%s/.socket.sock", xdg_runtime, his);
+    }
+
+    return TRUE;
+}
+
+/**
+ * Fetch data from hyprland ipc
+ *
+ * @param cmd The command to fetch
+ * @return The result of the command
+ */
+static char *ipc_fetch(const char *cmd) {
+    char socket_path[512];
+    gboolean path_ok = get_socket_path(
+        socket_path,
+        sizeof(socket_path),
+        HYPRLAND_SOCKET_TYPE_IPC
+    );
+    if(!path_ok) {
+        return NULL;
+    }
+
+    int fd = socket_connect(socket_path);
+    if(fd < 0) {
+        return NULL;
+    }
+
+    write(fd, cmd, strlen(cmd));
+    shutdown(fd, SHUT_WR);
+    char *data = socket_read(fd, SOCKET_READ_MAX);
+    close(fd);
+
+    return data;
+}
 
 /**
  * Connect and initialize the socket connection
@@ -12,22 +76,13 @@
  * @return The file descriptor
  */
 static int events_constructor() {
-    const char *his = getenv("HYPRLAND_INSTANCE_SIGNATURE");
-    const char *xdg_runtime = getenv("XDG_RUNTIME_DIR");
+    char socket_path[512];
+    gboolean path_ok =
+        get_socket_path(socket_path, 512, HYPRLAND_SOCKET_TYPE_EVENTS);
 
-    if(!his || !xdg_runtime) {
-        fprintf(stderr, "Missing environment variables.\n");
+    if(!path_ok) {
         return -1;
     }
-
-    char socket_path[512];
-    snprintf(
-        socket_path,
-        sizeof(socket_path),
-        "%s/hypr/%s/.socket2.sock",
-        xdg_runtime,
-        his
-    );
 
     int fd = socket_connect(socket_path);
 
@@ -117,9 +172,7 @@ static int window_sort(gconstpointer a, gconstpointer b) {
  * @param wm_data The window manager data to populate
  */
 static void data_fetcher(WwtWindowManagerData *wm_data) {
-    g_autofree char *batch_json =
-        cmd_run_output("hyprctl --batch \"monitors; clients\" -j");
-
+    g_autofree char *batch_json = ipc_fetch("[[BATCH]]j/monitors;j/clients;");
     if(!batch_json) {
         return;
     }

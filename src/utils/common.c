@@ -1,34 +1,5 @@
 #include "common.h"
-#include <sys/socket.h>
-#include <sys/un.h>
 #include <time.h>
-
-/**
- * Connect to a socket
- *
- * @param socket_path The address path to connect to
- * @return The socket file descriptor, or -1 on failure
- */
-int socket_connect(const char *socket_path) {
-    int fd = socket(AF_UNIX, SOCK_STREAM, 0);
-
-    if(fd < 0) {
-        perror("socket");
-        return -1;
-    }
-
-    struct sockaddr_un addr = {0};
-    addr.sun_family = AF_UNIX;
-    strncpy(addr.sun_path, socket_path, sizeof(addr.sun_path) - 1);
-
-    if(connect(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-        perror("connect");
-        close(fd);
-        return -1;
-    }
-
-    return fd;
-}
 
 /**
  * Creates the json parser
@@ -55,14 +26,26 @@ JsonParser *create_json_parser(const char *json_str) {
 /**
  * Gets the current timestamp in ms
  *
+ * @param unit The timestamp unit (S: seconds, MS: miliseconds, US:
+ * microseconds, NS: nanoseconds)
  * @return The timestamp in ms
  */
-long long get_timestamp() {
+long long get_timestamp(TimestampUnit unit) {
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
-    long long ms = (long long)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 
-    return ms;
+    switch(unit) {
+        case TIMESTAMP_S:
+            return (long long)ts.tv_sec;
+        case TIMESTAMP_MS:
+            return (long long)ts.tv_sec * 1000LL + ts.tv_nsec / 1000000;
+        case TIMESTAMP_US:
+            return (long long)ts.tv_sec * 1000000LL + ts.tv_nsec / 1000;
+        case TIMESTAMP_NS:
+            return (long long)ts.tv_sec * 1000000000LL + ts.tv_nsec;
+        default:
+            return (long long)ts.tv_sec * 1000LL + ts.tv_nsec / 1000000;
+    }
 }
 
 /**

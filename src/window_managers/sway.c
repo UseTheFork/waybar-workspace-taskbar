@@ -1,15 +1,138 @@
 #include "sway.h"
-#include "glib.h"
 #include "services/window_manager/data.h"
 #include "services/window_manager/events.h"
-#include "utils/cmd.h"
 #include "utils/common.h"
+#include "utils/socket.h"
 #include <stdio.h>
 #include <string.h>
 
+// Sway header
 #define SWAY_MAGIC "i3-ipc"
-#define SWAY_MAGIC_LEN 6
-#define SWAY_HEADER_LEN (SWAY_MAGIC_LEN + 8)
+#define SWAY_HEADER_MAGIC_SIZE 6
+#define SWAY_HEADER_PAYLOAD_LEN_SIZE 4
+#define SWAY_HEADER_PAYLOAD_TYPE_SIZE 4
+#define SWAY_HEADER_SIZE                                     \
+    (SWAY_HEADER_MAGIC_SIZE + SWAY_HEADER_PAYLOAD_LEN_SIZE + \
+        SWAY_HEADER_PAYLOAD_TYPE_SIZE)
+
+#define SWAY_PAYLOAD_TYPE_SUBSCRIBE 2
+#define SWAY_PAYLOAD_TYPE_GET_TREE 4
+
+/**
+ * Gets the sway socket path
+ *
+ * @return The socket path
+ */
+static char *get_socket_path() {
+    return getenv("SWAYSOCK");
+}
+
+/**
+ * Writes to the sway ipc header
+ *
+ * @param fd The ipc file descriptor
+ * @param payload_len The length of the payload
+ * @param payload_type The type of payload
+ * @return TRUE if successful else FALSE
+ */
+static gboolean sway_header_write(
+    int fd,
+    uint32_t payload_len,
+    uint32_t payload_type
+) {
+    char header[SWAY_HEADER_SIZE];
+
+    memcpy(header, SWAY_MAGIC, SWAY_HEADER_MAGIC_SIZE);
+    memcpy(
+        header + SWAY_HEADER_MAGIC_SIZE,
+        &payload_len,
+        SWAY_HEADER_PAYLOAD_LEN_SIZE
+    );
+    memcpy(
+        header + SWAY_HEADER_MAGIC_SIZE + SWAY_HEADER_PAYLOAD_LEN_SIZE,
+        &payload_type,
+        SWAY_HEADER_PAYLOAD_TYPE_SIZE
+    );
+
+    if(write(fd, header, SWAY_HEADER_SIZE) != SWAY_HEADER_SIZE) {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+/**
+ * Reads the sway ipc header
+ *
+ * @param fd The ipc file descriptor
+ * @param payload_len The length of the payload
+ * @param payload_type The type of payload
+ * @return TRUE if successful else FALSE
+ */
+static gboolean sway_header_read(
+    int fd,
+    uint32_t *payload_len,
+    uint32_t *msg_type
+) {
+    char header[SWAY_HEADER_SIZE];
+
+    if(read(fd, header, SWAY_HEADER_SIZE) != SWAY_HEADER_SIZE) {
+        return FALSE;
+    }
+
+    memcpy(
+        payload_len,
+        header + SWAY_HEADER_MAGIC_SIZE,
+        SWAY_HEADER_PAYLOAD_LEN_SIZE
+    );
+    memcpy(
+        msg_type,
+        header + SWAY_HEADER_MAGIC_SIZE + SWAY_HEADER_PAYLOAD_LEN_SIZE,
+        SWAY_HEADER_PAYLOAD_TYPE_SIZE
+    );
+
+    return TRUE;
+}
+
+/**
+ * Featches data from the ipc socket
+ *
+ * @param payload_type The sway message type
+ * @param cmd The payload to send to the sway ipc socket
+ * @return The ipc response
+ */
+static char *ipc_fetch(uint32_t payload_type, const char *cmd) {
+    uint32_t input_payload_len = cmd ? strlen(cmd) : 0;
+    const char *socket_path = get_socket_path();
+
+    if(!socket_path) {
+        return NULL;
+    }
+
+    int fd = socket_connect(socket_path);
+    gboolean write_ok = sway_header_write(fd, input_payload_len, payload_type);
+
+    if(!write_ok) {
+        close(fd);
+        return NULL;
+    }
+
+    uint32_t output_payload_len;
+    uint32_t output_payload_type;
+
+    gboolean read_ok =
+        sway_header_read(fd, &output_payload_len, &output_payload_type);
+
+    if(!read_ok) {
+        close(fd);
+        return NULL;
+    }
+
+    char *data = socket_read_len(fd, output_payload_len);
+    close(fd);
+
+    return data;
+}
 
 /**
  * Connect and initialize the socket connection
@@ -17,7 +140,7 @@
  * @return The file descriptor
  */
 static int events_constructor() {
-    const char *socket_path = getenv("SWAYSOCK");
+    const char *socket_path = get_socket_path();
 
     if(!socket_path) {
         return -1;
@@ -30,16 +153,16 @@ static int events_constructor() {
     }
 
     const char *events_json = "[\"workspace\", \"window\"]";
-
     uint32_t payload_len = strlen(events_json);
-    uint32_t msg_type = 2; // IPC_SUBSCRIBE
+    uint32_t payload_type = SWAY_PAYLOAD_TYPE_SUBSCRIBE;
 
-    char header[SWAY_HEADER_LEN];
-    memcpy(header, SWAY_MAGIC, SWAY_MAGIC_LEN);
-    memcpy(header + SWAY_MAGIC_LEN, &payload_len, 4);
-    memcpy(header + SWAY_MAGIC_LEN + 4, &msg_type, 4);
+    // header
+    // write(fd, SWAY_MAGIC, SWAY_HEADER_MAGIC_SIZE);
+    // write(fd, &payload_len, SWAY_HEADER_PAYLOAD_LEN_SIZE);
+    // write(fd, &payload_type, SWAY_HEADER_PAYLOAD_TYPE_SIZE);
+    sway_header_write(fd, payload_len, payload_type);
 
-    write(fd, header, SWAY_HEADER_LEN);
+    // command
     write(fd, events_json, payload_len);
 
     return fd;
@@ -64,19 +187,19 @@ static void events_destructor(int fd, FILE *socket_file) {
  * @return TRUE if should emit the event else FALSE
  */
 static gboolean events_reader(FILE *socket_file, WindowManagerEvent *event) {
-    char header[SWAY_HEADER_LEN];
+    char header[SWAY_HEADER_SIZE];
 
-    if(fread(header, 1, SWAY_HEADER_LEN, socket_file) != SWAY_HEADER_LEN) {
+    if(fread(header, 1, SWAY_HEADER_SIZE, socket_file) != SWAY_HEADER_SIZE) {
         return FALSE;
     }
 
-    if(memcmp(header, SWAY_MAGIC, SWAY_MAGIC_LEN) != 0) {
+    if(memcmp(header, SWAY_MAGIC, SWAY_HEADER_MAGIC_SIZE) != 0) {
         return FALSE;
     }
 
     uint32_t payload_len, msg_type;
-    memcpy(&payload_len, header + SWAY_MAGIC_LEN, 4);
-    memcpy(&msg_type, header + SWAY_MAGIC_LEN + 4, 4);
+    memcpy(&payload_len, header + SWAY_HEADER_MAGIC_SIZE, 4);
+    memcpy(&msg_type, header + SWAY_HEADER_MAGIC_SIZE + 4, 4);
 
     if((size_t)payload_len + 1 > event->msg_size) {
         event->msg = realloc(event->msg, payload_len + 1);
@@ -231,7 +354,7 @@ static void walk_tree(
  * with window_manager_data_destroy)
  */
 static void data_fetcher(WwtWindowManagerData *wm_data) {
-    g_autofree char *json_str = cmd_run_output("swaymsg -t get_tree");
+    g_autofree char *json_str = ipc_fetch(SWAY_PAYLOAD_TYPE_GET_TREE, NULL);
     if(!json_str) {
         return;
     }

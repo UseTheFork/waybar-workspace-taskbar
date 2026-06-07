@@ -1,5 +1,6 @@
 #include "cmd.h"
 #include <signal.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,31 +28,48 @@ int cmd_run(const char *cmd) {
  * @return (transfer full): The output string
  */
 char *cmd_run_output(const char *cmd) {
-    FILE *fp = popen(cmd, "r");
+    FILE *f = popen(cmd, "r");
 
-    if(!fp) {
+    if(!f) {
         return NULL;
     }
 
-    size_t size = 4096;
-    char *buf = g_malloc(size);
-    size_t len = 0;
-    char tmp[256];
+    size_t chunk_size = 4096;
+    size_t buf_size = chunk_size;
+    size_t bytes_total = 0;
+    size_t bytes_read = 0;
 
-    while(fgets(tmp, sizeof(tmp), fp)) {
-        size_t chunk = strlen(tmp);
-
-        if(len + chunk + 1 > size) {
-            size *= 2;
-            buf = g_realloc(buf, size);
-        }
-
-        memcpy(buf + len, tmp, chunk);
-        len += chunk;
+    char *buf = g_malloc(buf_size + 1);
+    if(!buf) {
+        pclose(f);
+        return NULL;
     }
 
-    buf[len] = '\0';
-    pclose(fp);
+    while(1) {
+        if(bytes_total + chunk_size > buf_size) {
+            buf_size *= 2;
+            char *tmp = g_realloc(buf, buf_size + 1);
+
+            if(!tmp) {
+                g_free(buf);
+                pclose(f);
+                return NULL;
+            }
+
+            buf = tmp;
+        }
+
+        bytes_read = fread(buf + bytes_total, 1, chunk_size, f);
+
+        if(bytes_read <= 0) {
+            break;
+        }
+
+        bytes_total += bytes_read;
+    }
+
+    buf[bytes_total] = '\0';
+    pclose(f);
 
     return buf;
 }
