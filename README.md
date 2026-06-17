@@ -65,7 +65,7 @@ If you are using Nix Flakes, you can consume this module directly without buildi
 1. In your `flake.nix` inputs, add:
 
    ```nix
-   waybar-workspace-taskbar.url = "github:usethefork/waybar-workspace-taskbar/main";
+   waybar-workspace-taskbar.url = "github:stevekanger/waybar-workspace-taskbar/main";
    ```
 
 2. Then in your waybar config, configure the module like:
