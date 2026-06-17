@@ -58,6 +58,25 @@ Minimal example:
 
 Note: You may need to use absolute paths depending on your environment.
 
+### Installation with Nix Flakes
+
+If you are using Nix Flakes, you can consume this module directly without building it manually.
+
+1. In your `flake.nix` inputs, add:
+
+   ```nix
+   waybar-workspace-taskbar.url = "github:usethefork/waybar-workspace-taskbar/main";
+   ```
+
+2. Then in your waybar config, configure the module like:
+
+   ```nix
+   "cffi/waybar-workspace-taskbar": {
+       "module_path": "${inputs.waybar-workspace-taskbar.packages.${system}}/waybar-workspace-taskbar.so",
+       "window-manager": "hyprland"
+   }
+   ```
+
 ### Configuration Options
 
 **IMPORTANT: Configuration inside this module does not support comments in your json**
