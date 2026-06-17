@@ -1,0 +1,47 @@
+{
+  "$schema": "https://raw.githubusercontent.com/UseTheFork/byte/refs/heads/main/schema.json",
+  "files": {
+    "watch": {
+      "enable": true
+    },
+    "ignore": [".byte", ".ruff_cache", ".idea", ".venv", ".env", ".git", ".pytest_cache", "__pycache__", "node_modules", "dist"]
+  },
+  "gateway": {
+    "enable": true,
+    "host": "127.0.0.1"
+  },
+  "git": {
+    "enable_scopes": false,
+    "enable_breaking_changes": false,
+    "enable_body": true,
+    "scopes": ["api", "auth", "cli", "config", "core", "db", "deps", "docs", "test", "ui"],
+    "description_guidelines": [],
+    "max_description_length": 72
+  },
+  "lint": {
+    "enable": false,
+    "commands": []
+  },
+  "llm": {
+    "fast": {
+      "model": "claude-haiku-4-5",
+      "provider": "anthropic"
+    },
+    "standard": {
+      "model": "claude-sonnet-4-6",
+      "provider": "anthropic"
+    },
+    "reasoning": {
+      "model": "claude-opus-4-6",
+      "provider": "anthropic"
+    },
+    "coding": {
+      "model": "claude-haiku-4-5",
+      "provider": "anthropic"
+    }
+  },
+  "tui": {
+    "ui_theme": "mocha",
+    "syntax_theme": "monokai"
+  }
+}
