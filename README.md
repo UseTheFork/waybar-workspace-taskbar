@@ -72,7 +72,7 @@ If you are using Nix Flakes, you can consume this module directly without buildi
 
    ```nix
    "cffi/waybar-workspace-taskbar": {
-       "module_path": "${inputs.waybar-workspace-taskbar.packages.${system}}/waybar-workspace-taskbar.so",
+       "module_path": "${inputs.waybar-workspace-taskbar.packages.${system}.default}/waybar-workspace-taskbar.so",
        "window-manager": "hyprland"
    }
    ```
